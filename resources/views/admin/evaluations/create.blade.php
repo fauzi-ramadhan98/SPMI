@@ -1,0 +1,79 @@
+@extends('layouts.admin')
+
+@section('title', 'Buat Evaluasi Diri')
+
+@section('content')
+<div class="mb-4">
+    <h1 class="h4 mb-1">Buat Evaluasi Diri</h1>
+    <p class="text-muted mb-0">SPMI memilih target Prodi/Unit, kemudian mengisi penilaian per standar beserta bukti.</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <form action="{{ route('admin.evaluations.store') }}" method="POST" class="card">
+            @csrf
+            <div class="card-body">
+                @if (isset($errors) && $errors->any())
+                    <div class="alert alert-danger">{{ $errors->first() }}</div>
+                @endif
+
+                <div class="mb-3">
+                    <label class="form-label">Target Evaluasi</label>
+                    <select id="target-type" class="form-select" onchange="toggleTarget()">
+                        <option value="prodi">Program Studi</option>
+                        <option value="unit">Unit Kerja</option>
+                    </select>
+                </div>
+                <div class="mb-3" id="target-prodi">
+                    <label class="form-label">Program Studi</label>
+                    <select name="evaluable_id" class="form-select">
+                        @foreach ($programs as $program)
+                            <option value="{{ $program->id }}">{{ $program->degree_level }} {{ $program->name }}</option>
+                        @endforeach
+                    </select>
+                    <input type="hidden" name="evaluable_type" value="prodi">
+                </div>
+                <div class="mb-3 d-none" id="target-unit">
+                    <label class="form-label">Unit Kerja</label>
+                    <select name="evaluable_id" class="form-select">
+                        @foreach ($units as $unit)
+                            <option value="{{ $unit->id }}">{{ $unit->name }}</option>
+                        @endforeach
+                    </select>
+                    <input type="hidden" name="evaluable_type" value="unit">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Nama Evaluasi (opsional)</label>
+                    <input type="text" name="name" class="form-control" placeholder="Otomatis bila dikosongkan">
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Tahun Akademik</label>
+                        <input type="text" name="academic_year" class="form-control" placeholder="cth: 2025/2026">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Semester</label>
+                        <select name="semester" class="form-select">
+                            <option value="Ganjil">Ganjil</option>
+                            <option value="Genap">Genap</option>
+                            <option value="Tahunan">Tahunan</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-primary"><i class="fa-solid fa-play"></i> Lanjut & Isi Standar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+function toggleTarget() {
+    var type = document.getElementById('target-type').value;
+    document.getElementById('target-prodi').classList.toggle('d-none', type !== 'prodi');
+    document.getElementById('target-unit').classList.toggle('d-none', type !== 'unit');
+}
+</script>
+@endpush
+@endsection

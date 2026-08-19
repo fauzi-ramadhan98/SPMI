@@ -1,0 +1,24 @@
+﻿== EvaluationController (app_http_controllers_admin_evaluationcontroller_evaluationcontroller)
+   src=app/Http/Controllers/Admin/EvaluationController.php
+   FUNCTIONS: ['.authorizeCreate()', '.authorizeFill()', '.authorizeFillOrView()', '.authorizeView()', '.canCreate()', '.canFill()', '.canManage()', '.canVerify()', '.create()', '.deleteAttachment()', '.destroy()', '.destroyAttachment()', '.destroyItem()', '.edit()', '.index()', '.isOwner()', '.render()', '.show()', '.store()', '.storeAttachment()', '.storeItem()', '.submit()', '.updateItems()', '.verify()']
+
+== AuditFindingController (app_http_controllers_admin_auditfindingcontroller_auditfindingcontroller)
+   src=app/Http/Controllers/Admin/AuditFindingController.php
+   FUNCTIONS: ['.destroy()', '.index()', '.store()', '.update()']
+
+== PimpinanController (app_http_controllers_admin_pimpinancontroller_pimpinancontroller)
+   src=app/Http/Controllers/Admin/PimpinanController.php
+   FUNCTIONS: ['.rtl()', '.rtlNote()', '.rtm()', '.rtmApprove()', '.rtmNote()']
+
+== ReportController (app_http_controllers_admin_reportcontroller_reportcontroller)
+   src=app/Http/Controllers/Admin/ReportController.php
+   FUNCTIONS: ['.generateAmiPdf()', '.index()']
+
+== KertasKerjaController (app_http_controllers_admin_kertaskerjacontroller_kertaskerjacontroller)
+   src=app/Http/Controllers/Admin/KertasKerjaController.php
+   FUNCTIONS: ['.index()']
+
+== AuditInstrumentController (app_http_controllers_admin_auditinstrumentcontroller_auditinstrumentcontroller)
+   src=app/Http/Controllers/Admin/AuditInstrumentController.php
+   FUNCTIONS: ['.auditeeRisks()', '.authorizeView()', '.destroy()', '.generateFromMaster()', '.index()', '.store()', '.syncFromRisk()', '.update()']
+

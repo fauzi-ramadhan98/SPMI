@@ -1,0 +1,41 @@
+﻿CANDIDATE app_models_unit_unit | src=app/Models/Unit.php
+
+NODE: Unit
+  source: app/Models/Unit.php
+  type: code
+  degree: 34
+  CONNECTIONS:
+    --imports--> AuditAssignmentController.php [EXTRACTED] (app/Http/Controllers/Admin/AuditAssignmentController.php)
+    --calls--> .create() [EXTRACTED] (app/Http/Controllers/Admin/AuditAssignmentController.php)
+    --calls--> .edit() [EXTRACTED] (app/Http/Controllers/Admin/AuditAssignmentController.php)
+    --imports--> DashboardController.php [EXTRACTED] (app/Http/Controllers/Admin/DashboardController.php)
+    --calls--> .index() [EXTRACTED] (app/Http/Controllers/Admin/DashboardController.php)
+    --imports--> DocumentController.php [EXTRACTED] (app/Http/Controllers/Admin/DocumentController.php)
+    --calls--> .create() [EXTRACTED] (app/Http/Controllers/Admin/DocumentController.php)
+    --calls--> .edit() [EXTRACTED] (app/Http/Controllers/Admin/DocumentController.php)
+    --imports--> EvaluationController.php [EXTRACTED] (app/Http/Controllers/Admin/EvaluationController.php)
+    --calls--> .create() [EXTRACTED] (app/Http/Controllers/Admin/EvaluationController.php)
+    --calls--> .store() [EXTRACTED] (app/Http/Controllers/Admin/EvaluationController.php)
+    --imports--> KertasKerjaController.php [EXTRACTED] (app/Http/Controllers/Admin/KertasKerjaController.php)
+    --imports--> RiskRegisterController.php [EXTRACTED] (app/Http/Controllers/Admin/RiskRegisterController.php)
+    --calls--> .create() [EXTRACTED] (app/Http/Controllers/Admin/RiskRegisterController.php)
+    --calls--> .edit() [EXTRACTED] (app/Http/Controllers/Admin/RiskRegisterController.php)
+    --imports--> UnitController.php [EXTRACTED] (app/Http/Controllers/Admin/UnitController.php)
+    --calls--> .index() [EXTRACTED] (app/Http/Controllers/Admin/UnitController.php)
+    --calls--> .store() [EXTRACTED] (app/Http/Controllers/Admin/UnitController.php)
+    --references--> .edit() [EXTRACTED] (app/Http/Controllers/Admin/UnitController.php)
+    --references--> .update() [EXTRACTED] (app/Http/Controllers/Admin/UnitController.php)
+    --references--> .destroy() [EXTRACTED] (app/Http/Controllers/Admin/UnitController.php)
+    --contains--> Unit.php [EXTRACTED] (app/Models/Unit.php)
+    --method--> .auditAssignments() [EXTRACTED] (app/Models/Unit.php)
+    --method--> .documents() [EXTRACTED] (app/Models/Unit.php)
+    --method--> .getCategoryLabelAttribute() [EXTRACTED] (app/Models/Unit.php)
+    --method--> .riskRegisters() [EXTRACTED] (app/Models/Unit.php)
+    --method--> .users() [EXTRACTED] (app/Models/Unit.php)
+    --mixes_in--> Illuminate\Database\Eloquent\Factories\HasFactory [EXTRACTED] ()
+    --inherits--> Illuminate\Database\Eloquent\Model [EXTRACTED] ()
+    --imports--> AdminUserSeeder.php [EXTRACTED] (database/seeders/AdminUserSeeder.php)
+    --calls--> .run() [EXTRACTED] (database/seeders/AdminUserSeeder.php)
+    --imports--> EvaluationSeeder.php [EXTRACTED] (database/seeders/EvaluationSeeder.php)
+    --imports--> UnitSeeder.php [EXTRACTED] (database/seeders/UnitSeeder.php)
+    --calls--> .run() [EXTRACTED] (database/seeders/UnitSeeder.php)

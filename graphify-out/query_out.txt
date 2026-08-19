@@ -1,0 +1,8 @@
+﻿Traversal: BFS | Start: ['2026_04_02_080217_add_document_link_to_risk_registers_table.php', 'risk_registers/index.blade.php', 'risk_registers/edit.blade.php'] | 5 nodes
+  NODE 2026_04_02_080217_add_document_link_to_risk_registers_table.php [src=database/migrations/2026_04_02_080217_add_document_link_to_risk_registers_table.php loc=L1]
+  NODE risk_registers/index.blade.php [src=resources/views/admin/risk_registers/index.blade.php loc=None]
+  NODE risk_registers/edit.blade.php [src=resources/views/admin/risk_registers/edit.blade.php loc=None]
+  NODE down() [src=database/migrations/2026_04_02_080217_add_document_link_to_risk_registers_table.php loc=L22]
+  NODE up() [src=database/migrations/2026_04_02_080217_add_document_link_to_risk_registers_table.php loc=L12]
+  EDGE 2026_04_02_080217_add_document_link_to_risk_registers_table.php --contains [EXTRACTED]--> down()
+  EDGE 2026_04_02_080217_add_document_link_to_risk_registers_table.php --contains [EXTRACTED]--> up()
