@@ -32,9 +32,13 @@ class UserController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|exists:roles,name',
             'nidn' => 'nullable|string|max:20',
-            'academic_program_id' => 'nullable|exists:academic_programs,id',
-            'unit_id' => 'nullable|exists:units,id',
+            // Wajib dipilih agar Evaluasi Diri/audit punya target (mencegah evaluable_id NULL)
+            'academic_program_id' => 'required_if:role,prodi|nullable|exists:academic_programs,id',
+            'unit_id' => 'required_if:role,unit|nullable|exists:units,id',
             'pimpinan_level' => 'nullable|in:ketua,wakil',
+        ], [
+            'academic_program_id.required_if' => 'Pilih Program Studi — wajib untuk role Prodi agar Evaluasi Diri & audit punya target.',
+            'unit_id.required_if' => 'Pilih Unit Kerja — wajib untuk role Unit agar Evaluasi Diri & audit punya target.',
         ]);
 
         $user = User::create([
@@ -66,8 +70,9 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'role' => 'required|exists:roles,name',
             'nidn' => 'nullable|string|max:20',
-            'academic_program_id' => 'nullable|exists:academic_programs,id',
-            'unit_id' => 'nullable|exists:units,id',
+            // Wajib dipilih agar Evaluasi Diri/audit punya target (mencegah evaluable_id NULL)
+            'academic_program_id' => 'required_if:role,prodi|nullable|exists:academic_programs,id',
+            'unit_id' => 'required_if:role,unit|nullable|exists:units,id',
             'pimpinan_level' => 'nullable|in:ketua,wakil',
         ];
 
@@ -79,7 +84,10 @@ class UserController extends Controller
             $rules['password'] = 'required|string|min:8|confirmed';
         }
 
-        $request->validate($rules);
+        $request->validate($rules, [
+            'academic_program_id.required_if' => 'Pilih Program Studi — wajib untuk role Prodi agar Evaluasi Diri & audit punya target.',
+            'unit_id.required_if' => 'Pilih Unit Kerja — wajib untuk role Unit agar Evaluasi Diri & audit punya target.',
+        ]);
 
         $user->name = $request->name;
         $user->email = $request->email;
