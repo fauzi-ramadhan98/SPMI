@@ -73,6 +73,50 @@
                         <div class="form-text">Kosongkan jika tidak ingin mengganti logo. Ukuran maks 2MB.</div>
                     </div>
 
+                    <hr class="my-4">
+                    <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-file-pdf me-2"></i>Pengaturan Cetak Laporan AMI (PDF)</h6>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold">Kode Dokumen (Header PDF)</label>
+                            <input type="text" name="report_kode" class="form-control"
+                                   placeholder="STMIKMI.LPMI.AMI.VIII.1"
+                                   value="{{ old('report_kode', setting('report_kode', 'STMIKMI.LPMI.AMI.VIII.1')) }}">
+                            <div class="form-text">Tampil pada baris &ldquo;Kode&rdquo; running head setiap halaman laporan.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Edisi</label>
+                            <input type="text" name="report_edisi" class="form-control"
+                                   placeholder="2"
+                                   value="{{ old('report_edisi', setting('report_edisi', '2')) }}">
+                            <div class="form-text">Tampil pada baris &ldquo;Edisi&rdquo; running head.</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="hidden" name="report_cover_enabled" value="0">
+                        <input type="checkbox" class="form-check-input" id="reportCoverEnabled"
+                               name="report_cover_enabled" value="1"
+                               @checked(old('report_cover_enabled', setting('report_cover_enabled', '1')) === '1')>
+                        <label class="form-check-label fw-bold" for="reportCoverEnabled">Tampilkan halaman cover pada laporan PDF</label>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Cover Kustom (opsional)</label>
+                        @if(setting('report_cover_image'))
+                            <div class="mb-2">
+                                <img src="{{ Storage::disk('public')->url(setting('report_cover_image')) }}" alt="Cover Laporan"
+                                     style="max-height: 170px;" class="bg-light border rounded p-1">
+                            </div>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input" name="report_cover_image_delete" value="1" id="coverDelete">
+                                <label class="form-check-label small" for="coverDelete">Hapus cover kustom (kembali ke cover bawaan)</label>
+                            </div>
+                        @endif
+                        <input type="file" name="report_cover_image" class="form-control" accept="image/png,image/jpeg">
+                        <div class="form-text">Jika diisi, gambar ini menjadi halaman cover pertama (disarankan rasio portrait/A4, maks 5MB). Kosongkan untuk mempertahankan cover saat ini.</div>
+                    </div>
+
                     <button type="submit" class="btn btn-primary btn-custom">
                         <i class="fa-solid fa-floppy-disk me-2"></i>Simpan Konfigurasi
                     </button>

@@ -27,6 +27,11 @@ class SettingController extends Controller
             'phone' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:150',
             'logo' => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
+            // Pengaturan cetak Laporan AMI (PDF)
+            'report_kode' => 'nullable|string|max:120',
+            'report_edisi' => 'nullable|string|max:30',
+            'report_cover_enabled' => 'nullable|in:0,1',
+            'report_cover_image' => 'nullable|image|mimes:png,jpg,jpeg|max:5120',
         ]);
 
         $userId = Auth::id();
@@ -44,6 +49,55 @@ class SettingController extends Controller
             $filename = 'logo.' . $file->getClientOriginalExtension();
             $file->storeAs('public/images', $filename, 'public');
             Setting::set('logo', 'images/' . $filename, 'general', null, $userId);
+        }
+
+        // ===== Pengaturan cetak Laporan AMI (header + cover halaman pertama) =====
+        if ($request->has('report_kode')) {
+            Setting::set(
+                'report_kode',
+                trim((string) $request->input('report_kode')) ?: 'STMIKMI.LPMI.AMI.VIII.1',
+                'laporan',
+                'Kode Dokumen Laporan AMI',
+                $userId
+            );
+        }
+        if ($request->has('report_edisi')) {
+            Setting::set(
+                'report_edisi',
+                trim((string) $request->input('report_edisi')) ?: '2',
+                'laporan',
+                'Edisi Dokumen Laporan AMI',
+                $userId
+            );
+        }
+        if ($request->has('report_cover_enabled')) {
+            Setting::set(
+                'report_cover_enabled',
+                $request->boolean('report_cover_enabled') ? '1' : '0',
+                'laporan',
+                'Tampilkan Cover Laporan',
+                $userId
+            );
+        }
+        if ($request->boolean('report_cover_image_delete')) {
+            $old = (string) setting('report_cover_image');
+            if ($old !== '' && Storage::disk('public')->exists($old)) {
+                Storage::disk('public')->delete($old);
+            }
+            Setting::set('report_cover_image', null, 'laporan', 'Cover Kustom Laporan', $userId);
+        }
+        if ($request->hasFile('report_cover_image')) {
+            $file = $request->file('report_cover_image');
+            $path = $file->storeAs(
+                'images',
+                'report-cover-' . time() . '.' . $file->getClientOriginalExtension(),
+                'public'
+            );
+            $old = (string) setting('report_cover_image');
+            if ($old !== '' && $old !== $path && Storage::disk('public')->exists($old)) {
+                Storage::disk('public')->delete($old);
+            }
+            Setting::set('report_cover_image', $path, 'laporan', 'Cover Kustom Laporan', $userId);
         }
 
         return redirect()->route('admin.settings.index')

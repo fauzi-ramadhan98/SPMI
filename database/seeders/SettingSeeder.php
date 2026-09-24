@@ -18,6 +18,10 @@ class SettingSeeder extends Seeder
             'phone'                  => ['', 'general', 'Telepon'],
             'email'                  => ['', 'general', 'Email'],
             'logo'                   => ['images/logo.png', 'general', 'Logo'],
+            'report_kode'            => ['STMIKMI.LPMI.AMI.VIII.1', 'laporan', 'Kode Dokumen Laporan AMI'],
+            'report_edisi'           => ['2', 'laporan', 'Edisi Dokumen Laporan AMI'],
+            'report_cover_enabled'   => ['1', 'laporan', 'Tampilkan Cover Laporan'],
+            'report_cover_image'     => ['', 'laporan', 'Cover Kustom Laporan'],
         ];
 
         foreach ($defaults as $key => [$value, $group, $label]) {
