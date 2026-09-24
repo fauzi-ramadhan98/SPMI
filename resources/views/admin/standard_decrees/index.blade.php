@@ -125,7 +125,19 @@
                             @endif
                         </div></td>
                     </tr>
+                    @empty
+                    <tr><td colspan="8" class="text-center text-muted py-4">{{ $isPerubahan ? 'Belum ada SK Perubahan. Revisi standar dulu lewat menu "Peninjauan & Revisi Standar" (P5.1), lalu buat SK Perubahan di sini.' : 'Belum ada SK Penetapan. Klik "Buat SK" untuk mulai.' }}</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
+        <div class="mt-3">{{ $decrees->links() }}</div>
+    </div>
+</div>
+
+{{-- Modal Upload & Tolak SK — diletakkan di luar tabel agar HTML valid dan baris tidak "kabur" keluar card --}}
+@foreach($decrees as $d)
                     <div class="modal fade" id="uploadModal-{{ $d->id }}" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog">
                             <form action="{{ route('admin.standard-decrees.upload-file', $d) }}" method="POST" enctype="multipart/form-data">
@@ -189,16 +201,7 @@
                     </div>
                     @endhasrole
                     @endif
-                    @empty
-                    <tr><td colspan="8" class="text-center text-muted py-4">{{ $isPerubahan ? 'Belum ada SK Perubahan. Revisi standar dulu lewat menu "Peninjauan & Revisi Standar" (P5.1), lalu buat SK Perubahan di sini.' : 'Belum ada SK Penetapan. Klik "Buat SK" untuk mulai.' }}</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        <div class="mt-3">{{ $decrees->links() }}</div>
-    </div>
-</div>
+@endforeach
 
 @hasrole('pimpinan')
 {{-- Catatan alur untuk pimpinan --}}

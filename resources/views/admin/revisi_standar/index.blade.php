@@ -115,7 +115,19 @@
                             </div>
                         </td>
                     </tr>
+                    @empty
+                    <tr><td colspan="7" class="text-center text-muted py-4">Belum ada standar mutu.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
+        <div class="mt-3">{{ $standards->links() }}</div>
+    </div>
+</div>
+
+{{-- Modal Riwayat Versi — diletakkan di luar tabel agar HTML valid dan baris tidak "kabur" keluar card --}}
+@foreach($standards as $std)
                     {{-- Modal Riwayat Versi --}}
                     <div class="modal fade" id="historyModal-{{ $std->id }}" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -162,16 +174,7 @@
                             </div>
                         </div>
                     </div>
-                    @empty
-                    <tr><td colspan="7" class="text-center text-muted py-4">Belum ada standar mutu.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        <div class="mt-3">{{ $standards->links() }}</div>
-    </div>
-</div>
+@endforeach
 
 @if($stats['draft'] > 0)
 <div class="alert alert-warning mt-3">
