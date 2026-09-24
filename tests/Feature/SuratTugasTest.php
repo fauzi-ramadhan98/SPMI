@@ -28,7 +28,7 @@ class SuratTugasTest extends TestCase
         $auditor->syncRoles(['auditor']);
 
         $cycle = AuditCycle::create([
-            'name' => 'AMI 2026', 'academic_year' => '2025/2026',
+            'name' => 'AMI 2025/2026 - Ganjil', 'academic_year' => '2025/2026',
             'semester' => 'Ganjil', 'start_date' => now(), 'end_date' => now()->addDays(30),
             'status' => 'aktif', 'created_by' => $auditor->id,
         ]);
@@ -65,6 +65,10 @@ class SuratTugasTest extends TestCase
 
         $response->assertOk();
         $this->assertStringContainsString('application/pdf', $response->headers->get('Content-Type') ?? '');
+        $response->assertHeader(
+            'Content-Disposition',
+            'attachment; filename="jadwal-visitasi-AMI 2025-2026 - Ganjil-2025-2026.pdf"'
+        );
     }
 
     public function test_auditor_can_view_surat_tugas_index_but_only_own_assignments(): void

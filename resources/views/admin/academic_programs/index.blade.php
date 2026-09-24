@@ -74,12 +74,10 @@
                                 </span>
                             @endif
                         </td>
-                        <td class="py-3 text-center pe-4">
+                        <td class="py-3 text-center pe-4 admin-actions-cell"><div class="admin-table-actions">
                             <a href="{{ route('admin.academic_programs.edit', $program->id) }}"
-                               class="btn btn-sm btn-outline-warning rounded-pill px-3 shadow-sm" title="Edit Program Studi">
-                                <i class="fa-solid fa-pen-to-square me-1"></i> Edit
-                            </a>
-                        </td>
+                               class="btn btn-sm btn-outline-warning icon-only-btn admin-table-action" title="Edit Program Studi" aria-label="Edit Program Studi"><i aria-hidden="true" class="fa-solid fa-pen-to-square"></i></a>
+                        </div></td>
                     </tr>
                     @empty
                     <tr>

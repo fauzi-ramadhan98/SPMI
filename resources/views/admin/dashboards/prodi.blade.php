@@ -98,7 +98,12 @@
                         <tbody>
                         @forelse($assignments as $a)
                             <tr>
-                                <td class="ps-4 py-3">{{ $a->cycle?->name ?? '-' }}</td>
+                                <td class="ps-4 py-3">
+                                    {{ $a->cycle?->name ?? '-' }}
+                                    @if($a->cycle?->start_date)
+                                        <div class="text-muted" style="font-size: 0.72rem;"><i class="fa-regular fa-calendar me-1"></i>{{ $a->cycle->start_date->format('d/m/Y') }} &mdash; {{ $a->cycle->end_date?->format('d/m/Y') ?? '—' }}</div>
+                                    @endif
+                                </td>
                                 <td>{{ $a->auditor_name ?? '-' }}</td>
                                 <td>
                                     @if($a->status === 'selesai')<span class="badge bg-success-subtle text-success">Selesai</span>
@@ -128,7 +133,13 @@
                 @forelse($notifications as $notice)
                 <div class="border-bottom px-3 py-2 {{ $notice->read_at ? 'bg-white' : 'bg-info bg-opacity-10' }}">
                     <div class="d-flex align-items-start gap-2">
+                        @if(($notice->data['type'] ?? '') === 'audit_allocation')
+                        <i class="fa-solid fa-calendar-check mt-1 text-primary"></i>
+                        @elseif(($notice->data['type'] ?? '') === 'risk_register_assignment')
+                        <i class="fa-solid fa-clipboard-list mt-1 text-warning"></i>
+                        @else
                         <i class="fa-solid fa-triangle-exclamation mt-1 text-danger"></i>
+                        @endif
                         <div>
                             <div class="small fw-semibold text-dark">{{ $notice->data['message'] ?? 'Notifikasi SPMI' }}</div>
                             @if(!empty($notice->data['note']))

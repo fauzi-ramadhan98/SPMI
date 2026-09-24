@@ -154,7 +154,7 @@
                             <th class="py-3 text-center">Jadwal</th>
                             <th class="py-3 text-center">Status</th>
                             <th class="py-3 text-center">Peserta</th>
-                            <th class="py-3 pe-4 text-end">Aksi</th>
+                            <th class="py-3 pe-4 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -172,26 +172,20 @@
                                 </span>
                             </td>
                             <td class="text-center">{{ $meeting->participants->count() }}</td>
-                            <td class="py-3 pe-4 text-end">
-                                <a href="{{ route('admin.rtm.show', $meeting->id) }}" class="btn btn-sm btn-outline-primary rounded-pill me-1">
-                                    <i class="fa-solid fa-eye me-1"></i> Baca
-                                </a>
+                            <td class="py-3 pe-4 text-center admin-actions-cell"><div class="admin-table-actions">
+                                <a href="{{ route('admin.rtm.show', $meeting->id) }}" class="btn btn-sm btn-outline-primary icon-only-btn admin-table-action" title="Baca" aria-label="Baca"><i aria-hidden="true" class="fa-solid fa-eye"></i></a>
                                 @if($meeting->status === 'notulensi')
                                     <form action="{{ route('admin.rtm.approve', $meeting->id) }}" method="POST" class="d-inline">
                                         @csrf
-                                        <button type="submit" name="approve" value="1" class="btn btn-sm btn-success rounded-pill shadow-sm">
-                                            <i class="fa-solid fa-gavel me-1"></i> Sahkan Risalah
-                                        </button>
+                                        <button type="submit" name="approve" value="1" class="btn btn-sm btn-outline-success icon-only-btn admin-table-action" title="Sahkan Risalah" aria-label="Sahkan Risalah"><i aria-hidden="true" class="fa-solid fa-gavel"></i></button>
                                     </form>
                                 @elseif($meeting->status === 'disahkan')
                                     <form action="{{ route('admin.rtm.approve', $meeting->id) }}" method="POST" class="d-inline">
                                         @csrf
-                                        <button type="submit" name="approve" value="0" class="btn btn-sm btn-outline-warning rounded-pill">
-                                            <i class="fa-solid fa-xmark me-1"></i> Batalkan
-                                        </button>
+                                        <button type="submit" name="approve" value="0" class="btn btn-sm btn-outline-danger icon-only-btn admin-table-action" title="Batalkan" aria-label="Batalkan"><i aria-hidden="true" class="fa-solid fa-xmark"></i></button>
                                     </form>
                                 @endif
-                            </td>
+                            </div></td>
                         </tr>
                         @empty
                         <tr><td colspan="6" class="text-center py-5 text-muted">Belum ada jadwal RTM.</td></tr>
@@ -253,7 +247,7 @@
                             <th class="py-3 text-center">Status</th>
                             <th class="py-3 text-center">Peserta</th>
                             <th class="py-3 text-center">Instruksi</th>
-                            <th class="py-3 pe-4 text-end">Aksi</th>
+                            <th class="py-3 pe-4 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -272,23 +266,17 @@
                             </td>
                             <td class="text-center">{{ $meeting->participants->count() }}</td>
                             <td class="text-center">{{ $meeting->instructions->count() }}</td>
-                            <td class="py-3 pe-4 text-end">
-                                <a href="{{ route('admin.rtm.show', $meeting->id) }}" class="btn btn-sm btn-primary rounded-pill shadow-sm me-1">
-                                    <i class="fa-solid fa-pen-to-square me-1"></i> Kelola
-                                </a>
-                                <a href="{{ route('admin.rtm.pdf', $meeting->id) }}" class="btn btn-sm btn-outline-secondary rounded-pill me-1">
-                                    <i class="fa-solid fa-file-pdf me-1"></i> PDF
-                                </a>
+                            <td class="py-3 pe-4 text-center admin-actions-cell"><div class="admin-table-actions">
+                                <a href="{{ route('admin.rtm.show', $meeting->id) }}" class="btn btn-sm btn-outline-warning icon-only-btn admin-table-action" title="Kelola" aria-label="Kelola"><i aria-hidden="true" class="fa-solid fa-pen-to-square"></i></a>
+                                <a href="{{ route('admin.rtm.pdf', $meeting->id) }}" class="btn btn-sm btn-outline-info icon-only-btn admin-table-action" title="PDF" aria-label="PDF"><i aria-hidden="true" class="fa-solid fa-file-pdf"></i></a>
                                 @if($meeting->status !== 'disahkan')
-                                    <a href="{{ route('admin.rtm.edit', $meeting->id) }}" class="btn btn-sm btn-outline-warning rounded-pill me-1">
-                                        <i class="fa-solid fa-pencil me-1"></i>
-                                    </a>
+                                    <a href="{{ route('admin.rtm.edit', $meeting->id) }}" class="btn btn-sm btn-outline-warning icon-only-btn admin-table-action" aria-label="Edit" title="Edit"><i aria-hidden="true" class="fa-solid fa-pen-to-square"></i></a>
                                     <form action="{{ route('admin.rtm.destroy', $meeting->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus jadwal RTM ini?')">
                                         @csrf @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill"><i class="fa-solid fa-trash"></i></button>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger icon-only-btn admin-table-action" aria-label="Hapus" title="Hapus"><i aria-hidden="true" class="fa-solid fa-trash"></i></button>
                                     </form>
                                 @endif
-                            </td>
+                            </div></td>
                         </tr>
                         @empty
                         <tr><td colspan="7" class="text-center py-5 text-muted">

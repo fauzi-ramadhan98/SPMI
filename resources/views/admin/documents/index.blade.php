@@ -61,8 +61,10 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-light">
                     <tr>
+                        <th class="ps-4 py-3">Kode Dokumen</th>
                         <th class="ps-4 py-3">Informasi Dokumen</th>
-                        <th class="py-3">Kategori</th>
+                <th class="py-3">Kategori</th>
+                <th class="py-3">Status</th>
                         <th class="py-3">Akses</th>
                         <th class="py-3">Pengunggah</th>
                         <th class="py-3 text-center pe-4">Aksi</th>
@@ -71,6 +73,9 @@
                 <tbody>
                     @forelse($documents as $doc)
                     <tr class="border-bottom">
+                        <td class="ps-4 py-3">
+                            {{ $doc->code ?? '-' }}
+                        </td>
                         <td class="ps-4 py-3">
                             <h6 class="fw-bold mb-1 text-dark">{{ $doc->title }}</h6>
                             <div class="text-muted small">
@@ -85,42 +90,42 @@
                             @endif
                         </td>
                         <td class="py-3">
-                            @if($doc->is_public)
-                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill"><i class="fa-solid fa-globe me-1"></i> Publik</span>
+                            @if($doc->status == 'aktif')
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill">Aktif</span>
                             @else
-                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 rounded-pill"><i class="fa-solid fa-lock me-1"></i> Internal</span>
+                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning rounded-pill">Draft</span>
                             @endif
                         </td>
                         <td class="py-3">
-                            <span class="text-muted small"><i class="fa-regular fa-user me-1"></i> {{ $doc->uploader ? $doc->uploader->name : '-' }}</span>
+                            @if($doc->is_public)
+                                <span class="badge bg-success bg-opacity-10 text-success border rounded-pill"><i class="fa-solid fa-globe me-1"></i> Publik</span>
+                            @else
+                                <span class="badge bg-warning bg-opacity-10 text-warning border rounded-pill"><i class="fa-solid fa-lock me-1"></i> Internal</span>
+                            @endif
                         </td>
-                        <td class="py-3 text-center pe-4">
-                            <div class="btn-group shadow-sm border rounded p-1 btn-group-sm">
-                                <a href="{{ route('admin.documents.download', $doc->id) }}" class="btn btn-light text-primary border-0" title="Unduh">
-                                    <i class="fa-solid fa-download"></i>
-                                </a>
-                                @if(Auth::user()->hasAnyRole(['administrator', 'spmi']) || Auth::id() == $doc->uploaded_by)
-                                <a href="{{ route('admin.documents.edit', $doc->id) }}" class="btn btn-light text-warning border-0" title="Edit">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </a>
-                                <form action="{{ route('admin.documents.destroy', $doc->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus dokumen ini?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-light text-danger border-0" title="Hapus">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </form>
-                                @endif
+                        <td class="py-3">
+                            <span class="text-muted small"><i class="fa-regular fa-user me-1"></i> {{ $doc->uploader?->name ?? '-' }}</span>
+                        </td>
+                        <td class="py-3 text-center pe-4 admin-actions-cell">
+                            <div class="admin-table-actions">
+                                <div class="admin-table-action-group">
+                                    <a href="{{ route('admin.documents.download', $doc->id) }}" class="btn btn-sm btn-outline-info icon-only-btn" title="Unduh"><i class="fa-solid fa-download"></i></a>
+                                    @if(Auth::user()->hasAnyRole(['administrator','spmi']) || Auth::id() == $doc->uploaded_by)
+                                    <a href="{{ route('admin.documents.edit', [$doc->id, 'module' => $module]) }}" class="btn btn-sm btn-outline-warning icon-only-btn" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                                    <form action="{{ route('admin.documents.destroy', $doc->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus dokumen ini?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger icon-only-btn" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+                                    </form>
+                                    @endif
+                                </div>
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="text-center py-5">
-                            <div class="text-muted">
-                                <i class="fa-solid fa-folder-open fs-1 mb-3 opacity-25"></i>
-                                <p class="mb-0">Belum ada dokumen yang diunggah.</p>
-                            </div>
+                        <td colspan="7" class="text-center py-5">
+                            <div class="text-muted"><i class="fa-solid fa-folder-open fs-1 mb-3 opacity-25"></i><p class="mb-0">Belum ada dokumen yang diunggah.</p></div>
                         </td>
                     </tr>
                     @endforelse

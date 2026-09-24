@@ -32,23 +32,48 @@
         }
 
         .navbar-custom {
-            background-color: rgba(255, 255, 255, 0.95);
+            background-color: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(10px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         }
 
         .navbar-custom .navbar-brand {
             font-weight: 700;
             color: var(--primary-color);
+            max-width: 320px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .navbar-custom .nav-link {
             font-weight: 500;
+            font-size: 0.93rem;
             color: var(--text-color);
+            padding: 0.5rem 0.75rem !important;
+            white-space: nowrap;
             transition: color 0.3s ease;
         }
 
-        .navbar-custom .nav-link:hover {
+        .navbar-custom .nav-link:hover,
+        .navbar-custom .nav-link:focus {
+            color: var(--secondary-color);
+        }
+
+        .navbar-custom .dropdown-menu {
+            border-radius: 10px;
+            padding: 0.5rem 0;
+            min-width: 220px;
+        }
+
+        .navbar-custom .dropdown-item {
+            font-size: 0.88rem;
+            padding: 0.5rem 1rem;
+            color: var(--text-color);
+        }
+
+        .navbar-custom .dropdown-item:hover {
+            background-color: var(--bg-color);
             color: var(--secondary-color);
         }
 
@@ -131,6 +156,11 @@
             font-size: 1.05rem !important;
         }
         @media (max-width: 768px) {
+            .navbar-custom .navbar-brand {
+                max-width: calc(100vw - 96px);
+                font-size: 0.95rem;
+            }
+
             .content-area { padding: 30px 20px !important; }
         }
     </style>
@@ -139,7 +169,7 @@
 <body>
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-custom sticky-top py-3">
+    <nav class="navbar navbar-expand-xl navbar-custom sticky-top py-3">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="{{ route('home') }}">
                 <img src="{{ asset(setting('logo', 'images/logo.png')) }}" alt="Logo" class="me-2" style="height: 40px; width: auto;">
@@ -149,7 +179,7 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-center">
+                <ul class="navbar-nav ms-auto align-items-xl-center">
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('home') }}">Beranda</a>
                     </li>
@@ -189,6 +219,7 @@
                             <li><a class="dropdown-item"
                                     href="{{ route('page.generic', ['slug' => 'layanan-alumni']) }}">Layanan Alumni
                                     (Karir Link)</a></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item"
                                     href="{{ route('page.generic', ['slug' => 'laporan-kepuasan']) }}">Laporan
                                     Kepuasan</a></li>
@@ -198,67 +229,50 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAMI" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false">
-                            Audit Mutu Internal
+                            Audit Mutu
                         </a>
                         <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="navbarDropdownAMI">
-                            <li><a class="dropdown-item" href="{{ route('page.generic', ['slug' => 'ami-prodi']) }}">AMI
-                                    Prodi</a></li>
-                            <li><a class="dropdown-item"
-                                    href="{{ route('page.generic', ['slug' => 'ami-unit-kerja']) }}">AMI Unit Kerja</a>
-                            </li>
-                        </ul>
-                    </li>
-
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMonev" role="button"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                            Monev Pembelajaran
-                        </a>
-                        <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="navbarDropdownMonev">
-                            <li><a class="dropdown-item"
-                                    href="{{ route('page.generic', ['slug' => 'monev-pembelajaran']) }}">Laporan Monev
-                                    Pembelajaran</a></li>
+                            <li><a class="dropdown-item" href="{{ route('page.generic', ['slug' => 'ami-prodi']) }}">AMI Program Studi</a></li>
+                            <li><a class="dropdown-item" href="{{ route('page.generic', ['slug' => 'ami-unit-kerja']) }}">AMI Unit Kerja</a></li>
                         </ul>
                     </li>
 
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownDokumen" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false">
-                            Dokumen SPMI
+                            Dokumen & Laporan
                         </a>
                         <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="navbarDropdownDokumen">
-                            <li><a class="dropdown-item" href="{{ route('public.documents.index') }}">Semua Dokumen
-                                    Mutu</a></li>
-                            <li><a class="dropdown-item"
-                                    href="{{ route('page.generic', ['slug' => 'dokumen-spmi-2021']) }}">Dokumen SPMI
-                                    2021</a></li>
-                            <li><a class="dropdown-item"
-                                    href="{{ route('page.generic', ['slug' => 'dokumen-spmi-2025']) }}">Dokumen SPMI
-                                    2025</a></li>
+                            <li><a class="dropdown-item" href="{{ route('page.generic', ['slug' => 'monev-pembelajaran']) }}">Laporan Monev Pembelajaran</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ route('public.documents.index') }}">Semua Dokumen Mutu</a></li>
+                            <li><a class="dropdown-item" href="{{ route('page.generic', ['slug' => 'dokumen-spmi-2021']) }}">Dokumen SPMI 2021</a></li>
+                            <li><a class="dropdown-item" href="{{ route('page.generic', ['slug' => 'dokumen-spmi-2025']) }}">Dokumen SPMI 2025</a></li>
                         </ul>
                     </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('page.generic', ['slug' => 'sertifikat']) }}">Sertifikat</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('public.news.index') }}">Berita</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link"
-                            href="{{ route('page.generic', ['slug' => 'benchmarking']) }}">Benchmarking</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownInfo" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            Informasi
+                        </a>
+                        <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="navbarDropdownInfo">
+                            <li><a class="dropdown-item" href="{{ route('page.generic', ['slug' => 'sertifikat']) }}">Sertifikat</a></li>
+                            <li><a class="dropdown-item" href="{{ route('public.news.index') }}">Berita</a></li>
+                            <li><a class="dropdown-item" href="{{ route('page.generic', ['slug' => 'benchmarking']) }}">Benchmarking</a></li>
+                        </ul>
                     </li>
 
                     @guest
-                        <li class="nav-item ms-lg-3">
-                            <a class="btn btn-outline-primary rounded-pill px-4 btn-sm mt-2 mt-lg-0"
+                        <li class="nav-item ms-xl-3">
+                            <a class="btn btn-outline-primary rounded-pill px-4 btn-sm mt-2 mt-xl-0"
                                 href="{{ route('login') }}">
                                 <i class="fa-solid fa-right-to-bracket me-1"></i> Login Portal
                             </a>
                         </li>
                     @else
-                        <li class="nav-item ms-lg-3">
-                            <a class="btn btn-primary rounded-pill px-4 btn-sm mt-2 mt-lg-0"
+                        <li class="nav-item ms-xl-3">
+                            <a class="btn btn-primary rounded-pill px-4 btn-sm mt-2 mt-xl-0"
                                 href="{{ route('admin.dashboard') }}">
                                 <i class="fa-solid fa-gauge me-1"></i> Dashboard
                             </a>

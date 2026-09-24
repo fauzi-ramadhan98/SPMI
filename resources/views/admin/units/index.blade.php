@@ -51,20 +51,16 @@
                                 <span class="badge bg-secondary bg-opacity-10 text-secondary border rounded-pill"><i class="fa-solid fa-circle me-1" style="font-size:0.4rem;"></i> Nonaktif</span>
                             @endif
                         </td>
-                        <td class="py-3 text-center pe-4">
-                            <div class="btn-group shadow-sm border rounded p-1 btn-group-sm">
-                                <a href="{{ route('admin.units.edit', $unit->id) }}" class="btn btn-light text-warning border-0" title="Edit">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </a>
+                        <td class="py-3 text-center pe-4 admin-actions-cell"><div class="admin-table-actions">
+                            <div class="admin-table-action-group">
+                                <a href="{{ route('admin.units.edit', $unit->id) }}" class="btn btn-sm btn-outline-warning icon-only-btn admin-table-action" title="Edit" aria-label="Edit"><i aria-hidden="true" class="fa-solid fa-pen-to-square"></i></a>
                                 <form action="{{ route('admin.units.destroy', $unit->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus unit kerja ini?');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-light text-danger border-0" title="Hapus">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger icon-only-btn admin-table-action" title="Hapus" aria-label="Hapus"><i aria-hidden="true" class="fa-solid fa-trash"></i></button>
                                 </form>
                             </div>
-                        </td>
+                        </div></td>
                     </tr>
                     @empty
                     <tr>

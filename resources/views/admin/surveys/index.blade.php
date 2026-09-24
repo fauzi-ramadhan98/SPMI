@@ -54,24 +54,18 @@
                                 <i class="fa-solid fa-users me-2"></i> {{ $survey->responses_count }}
                             </div>
                         </td>
-                        <td class="py-4 text-center pe-4">
-                            <div class="d-flex justify-content-center gap-2">
-                                <a href="{{ route('admin.surveys.builder', $survey->id) }}" class="btn btn-outline-primary btn-sm rounded px-3 py-1 fw-bold shadow-sm" title="Desain Form & Pertanyaan">
-                                    <i class="fa-solid fa-list-check me-1"></i> Builder
-                                </a>
-                                <a href="{{ route('admin.surveys.analytics', $survey->id) }}" class="btn btn-outline-success btn-sm rounded px-3 py-1 fw-bold shadow-sm" title="Lihat Hasil Analisis & Grafik">
-                                    <i class="fa-solid fa-chart-pie me-1"></i> Analytics
-                                </a>
+                        <td class="py-4 text-center pe-4 admin-actions-cell"><div class="admin-table-actions">
+                            <div class="admin-table-action-group">
+                                <a href="{{ route('admin.surveys.builder', $survey->id) }}" class="btn btn-sm btn-outline-primary icon-only-btn admin-table-action" title="Desain Form & Pertanyaan" aria-label="Desain Form & Pertanyaan"><i aria-hidden="true" class="fa-solid fa-list-check"></i></a>
+                                <a href="{{ route('admin.surveys.analytics', $survey->id) }}" class="btn btn-sm btn-outline-success icon-only-btn admin-table-action" title="Lihat Hasil Analisis & Grafik" aria-label="Lihat Hasil Analisis & Grafik"><i aria-hidden="true" class="fa-solid fa-chart-pie"></i></a>
                                 
                                 <form action="{{ route('admin.surveys.destroy', $survey->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus survei ini dan SELURUH data respons/jawabannya secara permanen?');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-outline-secondary btn-sm rounded shadow-sm text-danger" title="Hapus Survei">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger icon-only-btn admin-table-action" title="Hapus Survei" aria-label="Hapus Survei"><i aria-hidden="true" class="fa-solid fa-trash"></i></button>
                                 </form>
                             </div>
-                        </td>
+                        </div></td>
                     </tr>
                     @empty
                     <tr>

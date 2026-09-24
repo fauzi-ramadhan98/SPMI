@@ -12,6 +12,7 @@
         "laravel/tinker": "^2.10.1",
         "laravel/ui": "^4.6",
         "openspout/openspout": "^4.28",
+        "phpoffice/phpspreadsheet": "2.3",
         "spatie/laravel-permission": "^6.25"
     },
     "require-dev": {
@@ -86,6 +87,9 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "audit": {
+            "block-insecure": false
         }
     },
     "minimum-stability": "stable",

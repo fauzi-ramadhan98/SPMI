@@ -37,6 +37,11 @@ class EvaluationItem extends Model
         return $this->belongsTo(QualityStandard::class, 'quality_standard_id');
     }
 
+    public function checklistItem()
+    {
+        return $this->belongsTo(ChecklistItem::class, 'checklist_item_id');
+    }
+
     public function attachments()
     {
         return $this->morphMany(EvaluationAttachment::class, 'attachable');

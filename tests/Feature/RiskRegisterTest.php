@@ -38,6 +38,7 @@ class RiskRegisterTest extends TestCase
             'academic_year' => '2025/2026',
             'standar_mutu' => 'Standar Pendidikan',
             'butir_tilik' => 'IKU 1.1',
+            'risk_category' => 'SDM',
             'risk_description' => 'Risiko kekurangan dosen',
             'temuan' => 'Rasio dosen-mahasiswa belum memenuhi',
             'akar_masalah' => 'Keterbatasan rekrutmen',

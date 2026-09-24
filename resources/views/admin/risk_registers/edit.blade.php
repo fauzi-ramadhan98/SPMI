@@ -112,11 +112,20 @@
                         @error('academic_year') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                     <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Semester <span class="text-danger">*</span></label>
+                        <select name="semester" class="form-select @error('semester') is-invalid @enderror" required>
+                            <option value="">-- Pilih Semester --</option>
+                            <option value="Ganjil" {{ old('semester', $riskRegister->semester ?: $defaultSemester) == 'Ganjil' ? 'selected' : '' }}>Ganjil</option>
+                            <option value="Genap" {{ old('semester', $riskRegister->semester ?: $defaultSemester) == 'Genap' ? 'selected' : '' }}>Genap</option>
+                        </select>
+                        @error('semester') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+                    <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Standar Mutu Terkait <span class="text-danger">*</span></label>
                         <select name="standar_mutu" id="standarMutu" class="form-select @error('standar_mutu') is-invalid @enderror" required>
                             <option value="">-- Pilih Standar Mutu --</option>
                             @foreach($standards as $std)
-                                <option value="{{ $std->name }}" data-description="{{ htmlspecialchars($std->description) }}" 
+                                <option value="{{ $std->name }}" data-indicators='@json($std->indicatorData())' 
                                     {{ old('standar_mutu', $riskRegister->standar_mutu) == $std->name ? 'selected' : '' }}>
                                     {{ $std->kode_standar ? $std->kode_standar . ' - ' : '' }}{{ $std->name }}
                                 </option>
@@ -124,6 +133,20 @@
                         </select>
                         <div class="form-text">Standar SPMI yang berkaitan dengan risiko ini.</div>
                         @error('standar_mutu') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Kategori Risiko <span class="text-danger">*</span></label>
+                        <select name="risk_category" class="form-select @error('risk_category') is-invalid @enderror" required>
+                            <option value="">-- Pilih Kategori Risiko --</option>
+                            <option value="Operasional" {{ old('risk_category', $riskRegister->risk_category) == 'Operasional' ? 'selected' : '' }}>Operasional</option>
+                            <option value="SDM" {{ old('risk_category', $riskRegister->risk_category) == 'SDM' ? 'selected' : '' }}>SDM</option>
+                            <option value="Keuangan" {{ old('risk_category', $riskRegister->risk_category) == 'Keuangan' ? 'selected' : '' }}>Keuangan</option>
+                            <option value="Teknologi" {{ old('risk_category', $riskRegister->risk_category) == 'Teknologi' ? 'selected' : '' }}>Teknologi</option>
+                            <option value="Kepatuhan" {{ old('risk_category', $riskRegister->risk_category) == 'Kepatuhan' ? 'selected' : '' }}>Kepatuhan</option>
+                            <option value="Reputasi" {{ old('risk_category', $riskRegister->risk_category) == 'Reputasi' ? 'selected' : '' }}>Reputasi</option>
+                        </select>
+                        <div class="form-text">Kategori klasifikasi risiko.</div>
+                        @error('risk_category') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                 </div>
             </div>
@@ -223,9 +246,9 @@
                     @error('mitigation_plan') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="mb-3">
-                    <label class="form-label fw-bold"><i class="fa-brands fa-google-drive me-1 text-success"></i>Bukti Dokumen (Link GDrive) <span class="text-muted fw-normal">(Opsional)</span></label>
+                    <label class="form-label fw-bold"><i class="fa-solid fa-cloud-arrow-up me-1 text-success"></i>Upload dokumen pendukung <span class="text-muted fw-normal">(Opsional)</span></label>
                     <input type="url" name="document_link" class="form-control @error('document_link') is-invalid @enderror"
-                        placeholder="Contoh: https://drive.google.com/..." value="{{ old('document_link', $riskRegister->document_link) }}">
+                        placeholder="Tempel link dokumen (Drive / URL) - Contoh: https://drive.google.com/..." value="{{ old('document_link', $riskRegister->document_link) }}">
                     @error('document_link') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="row">
@@ -279,42 +302,58 @@
             
             if (!selectedOption || !selectedOption.value) return;
 
-            const description = selectedOption.getAttribute('data-description');
-            if (description) {
-                // Buat opsi khusus (fallback jika ada data lama yang tidak cocok)
-                const optionsSet = new Set();
-                
-                const lines = description.split('\n');
-                lines.forEach(line => {
-                    const cleanLine = line.replace(/^---\s*$/, '').trim();
-                    // Ambil baris non-kosong dan hindari pemisah garis ---
-                    if (cleanLine && cleanLine !== '---' && cleanLine !== '-') {
-                        optionsSet.add(cleanLine);
+            const indicatorsJson = selectedOption.getAttribute('data-indicators');
+            if (indicatorsJson) {
+                try {
+                    const data = JSON.parse(indicatorsJson);
+                    const optionsSet = new Set();
+
+                    // Add IKU indicators
+                    if (data.iku && Array.isArray(data.iku)) {
+                        data.iku.forEach((item, index) => {
+                            const text = item.text || '';
+                            const target = item.target ? ' (Target: ' + item.target + ')' : '';
+                            const displayText = 'IKU ' + (index + 1) + ': ' + text + target;
+                            optionsSet.add(displayText);
+                        });
                     }
-                });
-                
-                // Tambahkan opsi ke DOM
-                optionsSet.forEach(optVal => {
-                    const opt = document.createElement('option');
-                    opt.value = optVal;
-                    opt.textContent = optVal;
-                    if (oldIndikator && oldIndikator === optVal) opt.selected = true;
-                    indikatorSelect.appendChild(opt);
-                });
-                
-                // Jika oldIndikator ada tetapi tidak ditemukan di opsi, tambahkan sebagai "External/Old Value"
-                if (oldIndikator && !optionsSet.has(oldIndikator)) {
-                    const opt = document.createElement('option');
-                    opt.value = oldIndikator;
-                    opt.textContent = oldIndikator;
-                    opt.selected = true;
-                    indikatorSelect.appendChild(opt);
+
+                    // Add IKT indicators
+                    if (data.ikt && Array.isArray(data.ikt)) {
+                        data.ikt.forEach((item, index) => {
+                            const text = item.text || '';
+                            const target = item.target ? ' (Target: ' + item.target + ')' : '';
+                            const displayText = 'IKT ' + (index + 1) + ': ' + text + target;
+                            optionsSet.add(displayText);
+                        });
+                    }
+
+                    // Add options to DOM
+                    optionsSet.forEach(optVal => {
+                        const opt = document.createElement('option');
+                        opt.value = optVal;
+                        opt.textContent = optVal;
+                        if (oldIndikator && oldIndikator === optVal) opt.selected = true;
+                        indikatorSelect.appendChild(opt);
+                    });
+
+                    // If oldIndikator exists but not in options, add it
+                    if (oldIndikator && !optionsSet.has(oldIndikator)) {
+                        const opt = document.createElement('option');
+                        opt.value = oldIndikator;
+                        opt.textContent = oldIndikator;
+                        opt.selected = true;
+                        indikatorSelect.appendChild(opt);
+                    }
+                } catch (e) {
+                    console.error('Error parsing indicators:', e);
                 }
             }
         }
 
         standarSelect.addEventListener('change', updateIndikator);
         
+        // Trigger on load for prepopulating from old() validation redirects
         if (standarSelect.value) {
             updateIndikator();
         }

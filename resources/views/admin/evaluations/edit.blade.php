@@ -105,23 +105,38 @@
         @endif
     </div>
     <div class="card-body p-0">
-        <form method="POST" action="{{ route('admin.evaluations.items.update', $evaluation) }}">
+        {{-- Form utama Evaluasi (hanya untuk penilaian, tidak nested dengan form bukti) --}}
+        <form method="POST" action="{{ route('admin.evaluations.items.update', $evaluation) }}" id="formEvaluasi" class="d-none">
             @csrf @method('PUT')
-            @forelse ($evaluation->items as $item)
+        </form>
+        @php
+            $normalizeEdit = function($t){ $t=trim((string)$t); $t=preg_replace('/^\s*\[[^\]]+\]\s*/','',$t); $t=preg_replace('/^\s*(IKU|IKT)\s*\d+\s*:\s*/i','',$t); $t=preg_replace('/\s*\(Target:.*$/i','',$t); $t=str_replace('●','',$t); return mb_strtolower(trim($t)); };
+            // Hanya tampilkan indikator yang sudah ada di Risk Register (sesuai standar & butir)
+            $displayItems = $evaluation->items->filter(function($it) use ($ownerRisks, $normalizeEdit) {
+                foreach($ownerRisks as $r){
+                    $same=false;
+                    if(!empty($r->quality_standard_id) && !empty($it->quality_standard_id)) $same=(int)$r->quality_standard_id===(int)$it->quality_standard_id;
+                    else { $sn=trim($it->standard?->name??''); $rs=trim((string)$r->standar_mutu); $same=$sn!=='' && $rs!=='' && strcasecmp($rs,$sn)===0; }
+                    if(!$same) continue;
+                    $ic=$normalizeEdit($it->indicator); $bc=$normalizeEdit($r->butir_tilik);
+                    if($ic==='' || $bc==='') continue;
+                    if($ic===$bc || (mb_strlen($ic)>=10 && mb_strlen($bc)>=10 && (str_contains($ic,$bc)||str_contains($bc,$ic)))) return true;
+                }
+                return false;
+            });
+        @endphp
+        @forelse ($displayItems as $item)
                 @php $it = $item->id; @endphp
                 <div class="border-bottom p-3">
-                    <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
-                        <div>
-                            <strong>
-                                @if ($item->standard)<span class="badge bg-info text-dark me-1">{{ $item->standard->kode_standar }}</span>@endif
-                                {{ $item->indicator }}
-                            </strong>
+                    <div class="d-flex justify-content-between flex-wrap gap-2 mb-2 align-items-center">
+                        <div style="font-family: monospace; font-size: 13px; font-weight: bold;">
+                            [ {{ $item->standard?->kode_standar ?? 'S.01' }}.{{ $item->checklistItem?->code ?? $item->checklistItem?->indicator_key ?? 'B01' }} ] {{ $item->indicator }}
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             @if ($canFill && $evaluation->status !== 'verified')
                             <div>
                                 <label class="small mb-0 fw-bold">Penilaian Mandiri <span class="text-danger">*</span></label>
-                                <select name="items[{{ $it }}][self_assessment]" class="form-select form-select-sm {{ $errors->first('items.'.$it.'.self_assessment') ? 'is-invalid' : '' }}">
+                                <select name="items[{{ $it }}][self_assessment]" form="formEvaluasi" class="form-select form-select-sm {{ $errors->first('items.'.$it.'.self_assessment') ? 'is-invalid' : '' }}">
                                     <option value="">-- Pilih Status --</option>
                                     <option value="Tercapai" {{ old('items.'.$it.'.self_assessment', $item->self_assessment) == 'Tercapai' ? 'selected' : '' }}>Tercapai</option>
                                     <option value="Belum Tercapai" {{ old('items.'.$it.'.self_assessment', $item->self_assessment) == 'Belum Tercapai' ? 'selected' : '' }}>Belum Tercapai</option>
@@ -131,9 +146,12 @@
                             @else
                                 <span class="badge {{ $item->self_assessment == 'Tercapai' ? 'bg-success' : 'bg-danger' }}">{{ $item->self_assessment ?? '—' }}</span>
                             @endif
-                            <label class="small mb-0 fw-bold">Skor</label>
+                            <label class="small mb-0 fw-bold" title="Skala 0 = belum memenuhi sampai 4 = terpenuhi penuh">Skor <span class="text-muted fw-normal">(0&ndash;4)</span></label>
                             @if ($canFill && $evaluation->status !== 'verified')
-                                <input type="number" min="0" max="4" step="0.5" name="items[{{ $it }}][score]" class="form-control form-control-sm" style="width:70px" value="{{ old('items.'.$it.'.score', $item->score ?? '') }}">
+                                <input type="number" min="0" max="4" step="0.5" name="items[{{ $it }}][score]" form="formEvaluasi" class="form-control form-control-sm" style="width:70px" value="{{ old('items.'.$it.'.score', $item->score ?? '') }}">
+                                @if($errors->first('items.'.$it.'.score'))
+                                    <div class="text-danger" style="font-size: 0.7rem; max-width: 110px;">{{ $errors->first('items.'.$it.'.score') }}</div>
+                                @endif
                             @else
                                 <span class="small fw-bold text-dark">
                                     <i class="fa-solid fa-gauge-high me-1 text-muted"></i>
@@ -142,42 +160,80 @@
                                 </span>
                             @endif
                             @if ($canFill && $evaluation->status !== 'verified')
-                            <button type="submit" form="delete-item-{{ $item->id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus indikator + buktinya?')"><i class="fa-solid fa-trash"></i></button>
+                            <button type="submit" form="delete-item-{{ $item->id }}" class="btn btn-sm btn-outline-danger icon-only-btn" onclick="return confirm('Hapus indikator + buktinya?')" aria-label="Hapus"><i class="fa-solid fa-trash"></i></button>
                             @endif
                         </div>
                     </div>
+                    <hr class="my-2" style="border-top: 1px dashed #ccc;">
+
+                    {{-- ROW DARI DAFTAR TILIK (Plaintext style) --}}
+                    <div class="border rounded-2 p-2 mb-2 bg-white" style="font-family: monospace; font-size: 12px; line-height: 1.5; background:#fafafa;">
+                        <div><strong>[ ROW DARI DAFTAR TILIK ]</strong></div>
+                        <div>• Pertanyaan / Checklist : {{ $item->checklistItem?->audit_question ?? $item->criteria ?? $item->indicator }}</div>
+                        <div>• Status Checklist      : <span class="badge {{ $item->checklistItem?->is_active ?? true ? 'bg-success' : 'bg-secondary' }} ms-1" style="font-size:10px;">{{ $item->checklistItem?->is_active ?? true ? 'Ya' : 'Tidak' }}</span> <span class="text-muted" style="font-size:10px;">&lt;-- Ditarik dari Daftar Tilik</span></div>
+                    </div>
 
                     @php
-                        $itemRisks = $ownerRisks->filter(function ($risk) use ($item) {
-                            $stdName = trim($item->standard?->name ?? '');
-                            if ($stdName && strcasecmp(trim((string)$risk->standar_mutu), $stdName) === 0) {
-                                return true;
+                        // Normalisasi inti indikator: hapus prefix [S.01.B01], IKU 1:, IKT 1:, dll agar matching presisi per butir
+                        $normalize = function($text) {
+                            $text = trim((string)$text);
+                            // Hapus prefix [S.01.B01] atau [B01]
+                            $text = preg_replace('/^\s*\[[^\]]+\]\s*/', '', $text);
+                            // Hapus prefix IKU 1: / IKT 2: (case-insensitive)
+                            $text = preg_replace('/^\s*(IKU|IKT)\s*\d+\s*:\s*/i', '', $text);
+                            // Hapus bullet ● dan target (Target: ...)
+                            $text = preg_replace('/\s*\(Target:.*$/i', '', $text);
+                            $text = str_replace('●', '', $text);
+                            return mb_strtolower(trim($text));
+                        };
+                        $itemRisks = $ownerRisks->filter(function ($risk) use ($item, $normalize) {
+                            // Harus satu standar yang sama (via ID jika ada, fallback via nama)
+                            $sameStandard = false;
+                            if (!empty($risk->quality_standard_id) && !empty($item->quality_standard_id)) {
+                                $sameStandard = (int)$risk->quality_standard_id === (int)$item->quality_standard_id;
+                            } else {
+                                $stdName = trim($item->standard?->name ?? '');
+                                $riskStd = trim((string)$risk->standar_mutu);
+                                $sameStandard = $stdName !== '' && $riskStd !== '' && strcasecmp($riskStd, $stdName) === 0;
                             }
-                            $indicator = trim((string)$item->indicator);
-                            $butir = trim((string)$risk->butir_tilik);
-                            if ($indicator && $butir && (str_contains($indicator, $butir) || str_contains($butir, $indicator))) {
-                                return true;
+                            if (!$sameStandard) {
+                                return false;
                             }
-                            return false;
+                            // Wajib cocok per butir/indikator (inti teks sama)
+                            $indicatorCore = $normalize($item->indicator);
+                            $butirCore = $normalize($risk->butir_tilik);
+                            if ($indicatorCore === '' || $butirCore === '') {
+                                return false;
+                            }
+                            // Exact match inti atau salah satu mengandung inti yang lain (>= 10 char overlap)
+                            return $indicatorCore === $butirCore
+                                || (mb_strlen($indicatorCore) >= 10 && mb_strlen($butirCore) >= 10 && (str_contains($indicatorCore, $butirCore) || str_contains($butirCore, $indicatorCore)));
                         })->values();
                     @endphp
 
-                    {{-- Informasi Profil Risiko Awal (statis dari Risk Register) --}}
+                    {{-- ROW DARI RISK REGISTER (Plaintext) --}}
                     @if($itemRisks->isNotEmpty())
-                    <div class="alert alert-warning bg-warning bg-opacity-10 border-warning border-opacity-25 py-2 px-3 mb-3 small">
-                        <div class="fw-bold mb-1"><i class="fa-solid fa-circle-info me-1"></i>Informasi Profil Risiko Awal</div>
                         @foreach($itemRisks as $risk)
-                            <div class="mb-1">Potensi risiko adalah <em>"{{ $risk->risk_description }}"</em> dengan rencana mitigasi <em>"{{ $risk->mitigation_plan }}"</em>.</div>
+                        <div class="border rounded-2 p-2 mb-2 bg-white" style="font-family: monospace; font-size: 12px; line-height: 1.5; background:#fffbe6; border-color:#facc15 !important;">
+                            <div class="fw-bold small mb-1">[ ROW DARI RISK REGISTER ] <span class="text-muted fw-normal">(Read-Only / Otomatis ditarik jika ada)</span></div>
+                            <div>• Risiko Awal           : {{ $risk->risk_description ?: '—' }} <span class="text-muted">(Skor: {{ $risk->risk_score ?? '-' }} - {{ strtoupper($risk->risk_level ?? '-') }})</span></div>
+                            <div>• Rencana Mitigasi      : {{ $risk->mitigation_plan ?: '—' }}</div>
+                        </div>
                         @endforeach
-                    </div>
+                    @else
+                        <div class="border rounded-2 p-2 mb-2 bg-light small text-muted" style="font-family: monospace; font-size: 12px;">
+                            <div>[ ROW DARI RISK REGISTER ] (Read-Only / Otomatis ditarik jika ada)</div>
+                            <div class="text-muted">Belum ada Risk Register untuk indikator ini ({{ $item->standard?->kode_standar ?? 'tanpa kode' }}). Silakan isi Risk Register terlebih dahulu.</div>
+                        </div>
                     @endif
+                    <hr class="my-2" style="border-top: 1px dashed #ccc;">
 
                     <div class="row g-2">
                         <div class="col-12">
                             <label class="small text-muted fw-bold">Deskripsi Capaian &amp; Analisis @if ($canFill && $evaluation->status !== 'verified')<span class="text-danger">*</span>@endif</label>
                             @if ($canFill && $evaluation->status !== 'verified')
                             <div class="form-text mb-1 small">Ceritakan realita saat ini dan analisis apakah mitigasi awal di atas berhasil atau gagal (wajib diisi).</div>
-                            <textarea name="items[{{ $it }}][narasi]" rows="3" class="form-control form-control-sm {{ $errors->first('items.'.$it.'.narasi') ? 'is-invalid' : '' }}" required>{{ old('items.'.$it.'.narasi', $item->narasi) }}</textarea>
+                            <textarea name="items[{{ $it }}][narasi]" form="formEvaluasi" rows="3" class="form-control form-control-sm {{ $errors->first('items.'.$it.'.narasi') ? 'is-invalid' : '' }}" required>{{ old('items.'.$it.'.narasi', $item->narasi) }}</textarea>
                             @if($errors->first('items.'.$it.'.narasi'))<div class="invalid-feedback">{{ $errors->first('items.'.$it.'.narasi') }}</div>@endif
                             @else
                             <div class="border rounded-2 p-2 small bg-white" style="white-space: pre-wrap;">{{ $item->narasi ?? '—' }}</div>
@@ -225,16 +281,17 @@
                 </div>
             @empty
                 <div class="p-4 text-center text-muted">
-                    Belum ada indikator. @if ($canFill && $evaluation->status !== 'verified') Gunakan tombol "Generate dari Daftar Tilik" untuk membuat indikator sesuai instrumen SPMI.@endif
+                    Belum ada indikator yang memiliki Risk Register untuk standar & indikator ini.<br>
+                    <span class="small">Hanya indikator yang sudah diisi di menu <a href="{{ route('admin.risk-registers.create') }}">Risk Register</a> yang tampil di sini. Silakan isi Risk Register terlebih dahulu, lalu Generate ulang.</span>
+                    @if ($canFill && $evaluation->status !== 'verified') <div class="mt-2"><span class="small">Atau gunakan tombol "Generate dari Daftar Tilik" untuk membuat indikator, lalu buat Risk Register-nya.</span></div>@endif
                 </div>
             @endforelse
 
-            @if ($canFill && $evaluation->status !== 'verified' && $evaluation->items->isNotEmpty())
+            @if ($canFill && $evaluation->status !== 'verified' && $displayItems->isNotEmpty())
             <div class="p-3">
-                <button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Evaluasi Diri</button>
+                <button type="submit" form="formEvaluasi" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Evaluasi Diri</button>
             </div>
             @endif
-        </form>
 
         @if ($canFill && $evaluation->status !== 'verified')
         <div class="p-3 border-top bg-white">
@@ -250,4 +307,45 @@
         @endif
     </div>
 </div>
+
+@push('scripts')
+<script>
+// Simpan Deskripsi & Analisis ke localStorage agar tidak hilang saat unggah bukti (form terpisah)
+(function(){
+    const formId = 'formEvaluasi';
+    const storageKey = 'eval_draft_' + {{ $evaluation->id }};
+    const form = document.getElementById(formId);
+    if(!form) return;
+    // Restore
+    try {
+        const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
+        Object.keys(saved).forEach(name => {
+            const el = form.querySelector('[name="'+CSS.escape(name)+'"]');
+            if(el) el.value = saved[name];
+        });
+        if(Object.keys(saved).length) console.log('Draft evaluasi dipulihkan dari localStorage');
+    } catch(e){}
+    // Save on input
+    let saveTimer;
+    form.addEventListener('input', function(){
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(()=>{
+            const data = {};
+            form.querySelectorAll('textarea, select, input[type="number"]').forEach(el=>{ if(el.name) data[el.name]=el.value; });
+            localStorage.setItem(storageKey, JSON.stringify(data));
+        }, 400);
+    });
+    // Clear on successful submit
+    form.addEventListener('submit', function(){ localStorage.removeItem(storageKey); });
+    // Saat submit form lampiran, simpan dulu (agar tidak hilang saat reload)
+    document.querySelectorAll('form[action*="attachments.store"]').forEach(f=>{
+        f.addEventListener('submit', function(){
+            const data = {};
+            form.querySelectorAll('textarea, select, input[type="number"]').forEach(el=>{ if(el.name) data[el.name]=el.value; });
+            localStorage.setItem(storageKey, JSON.stringify(data));
+        });
+    });
+})();
+</script>
+@endpush
 @endsection

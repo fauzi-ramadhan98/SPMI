@@ -59,31 +59,23 @@
                         <td class="py-4 text-center">
                             <span class="badge bg-light text-dark border fs-6 rounded px-3 py-2">{{ $cycle->assignments_count }}</span>
                         </td>
-                        <td class="py-4 text-center pe-4">
-                            <div class="btn-group shadow-sm border rounded p-1 btn-group-sm">
-                                <a href="{{ route('admin.audit.assignments.index', ['cycle_id' => $cycle->id]) }}" class="btn btn-light text-info border-0" title="Kelola Alokasi">
-                                    <i class="fa-solid fa-users-gear"></i>
-                                </a>
+                        <td class="py-4 text-center pe-4 admin-actions-cell"><div class="admin-table-actions">
+                            <div class="admin-table-action-group">
+                                <a href="{{ route('admin.audit.assignments.index', ['cycle_id' => $cycle->id]) }}" class="btn btn-sm btn-outline-primary icon-only-btn admin-table-action" title="Kelola Alokasi" aria-label="Kelola Alokasi"><i aria-hidden="true" class="fa-solid fa-users-gear"></i></a>
                                 @hasrole('spmi')
                                 @if($cycle->status == 'draft')
-                                <a href="{{ route('admin.audit.cycles.edit', $cycle->id) }}" class="btn btn-light text-warning border-0" title="Edit Siklus">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </a>
+                                <a href="{{ route('admin.audit.cycles.edit', $cycle->id) }}" class="btn btn-sm btn-outline-warning icon-only-btn admin-table-action" title="Edit Siklus" aria-label="Edit Siklus"><i aria-hidden="true" class="fa-solid fa-pen-to-square"></i></a>
                                 <form action="{{ route('admin.audit.cycles.destroy', $cycle->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin hapus siklus AMI ini?');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-light text-danger border-0" title="Hapus">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger icon-only-btn admin-table-action" title="Hapus" aria-label="Hapus"><i aria-hidden="true" class="fa-solid fa-trash"></i></button>
                                 </form>
                                 @else
-                                <span class="btn btn-light text-muted border-0" title="Dikunci (riwayat)">
-                                    <i class="fa-solid fa-lock"></i>
-                                </span>
+                                <span class="btn btn-sm btn-outline-secondary icon-only-btn admin-table-action disabled" title="Dikunci (riwayat)" aria-label="Dikunci (riwayat)" aria-disabled="true"><i aria-hidden="true" class="fa-solid fa-lock"></i></span>
                                 @endif
                                 @endhasrole
                             </div>
-                        </td>
+                        </div></td>
                     </tr>
                     @empty
                     <tr>

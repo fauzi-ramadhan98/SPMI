@@ -6,7 +6,7 @@
 <div class="card card-custom shadow-sm mb-4 border-0 border-top border-4 border-primary">
     <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
         <div class="d-flex align-items-center mb-3">
-            <a href="{{ route('admin.audit.assignments.index') }}" class="btn btn-sm btn-light rounded-circle me-3"><i class="fa-solid fa-arrow-left"></i></a>
+            <a href="{{ route('admin.audit.assignments.index') }}" class="btn btn-sm btn-light rounded-circle me-3 icon-only-btn" aria-label="Kembali"><i class="fa-solid fa-arrow-left"></i></a>
             <div>
                 <h5 class="fw-bold mb-1 text-primary">Lembar Kerja Profiling & Borang Audit Mutu</h5>
                 <p class="text-muted small mb-0">Auditee: <strong>{{ $assignment->auditee_label }}</strong> ({{ $assignment->auditee_type_label }}) | Siklus: <strong>{{ $assignment->cycle->name }}</strong></p>
@@ -162,6 +162,12 @@
         @endhasrole
         @endif
 
+        @if(!$evaluation)
+        <div class="alert alert-warning border-0 shadow-sm rounded-3 small mb-4">
+            <i class="fa-solid fa-circle-exclamation me-2"></i> Belum ada <strong>Evaluasi Diri</strong> untuk {{ $assignment->auditee_label }}. Prodi/Unit perlu membuat ED terlebih dahulu di menu <strong>Evaluasi Diri</strong> agar klaim otomatis tampil di kolom ini.
+            @hasrole('prodi|unit')<a href="{{ route('admin.evaluations.create') }}" class="fw-bold ms-1">Buat Evaluasi Diri &rarr;</a>@endhasrole
+        </div>
+        @endif
         <h6 class="fw-bold mb-3 d-flex align-items-center"><i class="fa-solid fa-list-check me-2 text-primary"></i> Borang Penilaian ({{ $instruments->count() }} Kriteria)</h6>
 
         <div class="alert alert-primary bg-primary bg-opacity-10 border-primary border-opacity-25 rounded-3 small py-2 px-3 mb-3">
@@ -179,13 +185,14 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-light text-muted small">
                     <tr>
-                        <th class="py-3 px-3 border-0" style="width: 13%;">Standar Penilaian</th>
-                        <th class="py-3 px-3 border-0 border-start" style="width: 20%;">Indikator</th>
-                        <th class="py-3 px-3 border-0 border-start" style="width: 25%;">Klaim Evaluasi Diri Prodi</th>
-                        <th class="py-3 px-3 border-0 border-start" style="width: 24%;">Temuan & Bukti Audit</th>
-                        <th class="py-3 px-2 text-center border-0 border-start" style="width: 7%;">Nilai</th>
-                        <th class="py-3 px-3 border-0 border-start text-center" style="width: 11%;">Kategori Temuan</th>
-                        <th class="py-3 px-3 border-0 border-start text-center" style="width: 8%;">Aksi</th>
+                        <th class="py-3 px-3 border-0" style="width: 12%;">Standar Penilaian</th>
+                        <th class="py-3 px-3 border-0 border-start" style="width: 18%;">Indikator</th>
+                        <th class="py-3 px-3 border-0 border-start" style="width: 18%;">Pertanyaan Daftar Tilik</th>
+                        <th class="py-3 px-3 border-0 border-start" style="width: 16%;">Klaim Evaluasi Diri Prodi</th>
+                        <th class="py-3 px-3 border-0 border-start" style="width: 22%;">Temuan & Bukti Audit</th>
+                        <th class="py-3 px-2 text-center border-0 border-start" style="width: 6%;">Nilai</th>
+                        <th class="py-3 px-3 border-0 border-start text-center" style="width: 9%;">Kategori Temuan</th>
+                        <th class="py-3 px-3 border-0 border-start text-center" style="width: 7%;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -218,33 +225,94 @@
                             </details>
                             @endif
                         </td>
+                        <td class="px-3 py-3 align-top border-start" style="white-space: pre-wrap; word-break: break-word;">
+                            @php
+                                $normQ = $normalizeIndicator ?? fn($t)=>mb_strtolower(trim((string)$t));
+                                $qNorm = $normQ($inst->indicator);
+                                $qRaw = mb_strtolower(trim($inst->indicator));
+                                $edForQ = $edByIndicator->get($qNorm) ?? $edByIndicator->get($qRaw);
+                                if(!$edForQ){
+                                    foreach($edByIndicator as $k=>$v){
+                                        if($k!=='' && (str_contains($qNorm,$k) || str_contains($k,$qNorm)) && mb_strlen($k)>=10){ $edForQ=$v; break; }
+                                    }
+                                }
+                                $pertanyaan = $edForQ?->checklistItem?->audit_question ?? $edForQ?->criteria ?? $inst->audit_question ?? null;
+                            @endphp
+                            @if($pertanyaan)
+                                <div class="small text-dark lh-base"><i class="fa-solid fa-circle-question text-primary me-1"></i>{{ $pertanyaan }}</div>
+                                @if($edForQ?->checklistItem?->indicator_key)
+                                    <div class="text-muted mt-1" style="font-size:10px;"><span class="badge bg-light text-dark border" style="font-size:10px;">{{ $edForQ->checklistItem->indicator_key }}</span></div>
+                                @endif
+                            @elseif($inst->audit_question)
+                                <div class="small text-muted fst-italic lh-base"><i class="fa-solid fa-circle-question me-1"></i>{{ $inst->audit_question }}</div>
+                            @else
+                                <span class="text-muted small">—</span>
+                            @endif
+                        </td>
                         <td class="px-3 py-3 align-top border-start">
                             @php
-                                $edItem = $edByIndicator->get(mb_strtolower(trim($inst->indicator)));
+                                $normFn = $normalizeIndicator ?? fn($t)=>mb_strtolower(trim((string)$t));
+                                $keyNorm = $normFn($inst->indicator);
+                                $keyRaw = mb_strtolower(trim($inst->indicator));
+                                $edItem = $edByIndicator->get($keyNorm) ?? $edByIndicator->get($keyRaw);
+                                if(!$edItem){
+                                    // fallback: cari yang mengandung inti (longest common)
+                                    foreach($edByIndicator as $k=>$v){
+                                        if($k!=='' && (str_contains($keyNorm,$k) || str_contains($k,$keyNorm)) && mb_strlen($k)>=10){ $edItem=$v; break; }
+                                    }
+                                }
                             @endphp
                             @if($edItem)
-                                <div class="mb-1">
-                                    <span class="badge {{ $edItem->self_assessment == 'Tercapai' ? 'bg-success' : ($edItem->self_assessment == 'Belum Tercapai' ? 'bg-danger' : 'bg-secondary') }} rounded-pill px-2 py-1" style="font-size: 0.7rem;">
-                                        {{ $edItem->self_assessment ?? 'Belum dinilai' }}
+                                <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                                    <span class="badge {{ $edItem->self_assessment == 'Tercapai' ? 'bg-success' : ($edItem->self_assessment == 'Belum Tercapai' ? 'bg-danger' : 'bg-secondary') }} rounded-pill px-2 py-1 shadow-sm" style="font-size: 0.68rem; letter-spacing:0.2px;">
+                                        <i class="fa-solid {{ $edItem->self_assessment == 'Tercapai' ? 'fa-check' : ($edItem->self_assessment == 'Belum Tercapai' ? 'fa-xmark' : 'fa-minus') }} me-1"></i>{{ $edItem->self_assessment ?? 'Belum dinilai' }}
+                                    </span>
+                                    <span class="badge bg-white text-dark border shadow-sm rounded-pill px-2 py-1" style="font-size: 0.68rem;">
+                                        <i class="fa-solid fa-gauge-high me-1 text-primary"></i> Skor <strong>{{ $edItem->score ?? '—' }}</strong><span class="text-muted fw-normal">/4</span>
                                     </span>
                                 </div>
-                                <div class="text-dark small border rounded-2 p-2 bg-white mb-2" style="white-space: pre-wrap;">
-                                    {{ $edItem->narasi ?? '—' }}
-                                </div>
-                                @forelse($edItem->attachments as $b)
-                                    <div class="mb-1">
-                                        @if ($b->file_path)
-                                            <a href="{{ asset('storage/' . $b->file_path) }}" target="_blank" class="small text-primary"><i class="fa-solid fa-file me-1"></i>{{ $b->file_name}}</a>
-                                        @elseif ($b->link)
-                                            <a href="{{ $b->link }}" target="_blank" class="small text-primary text-break"><i class="fa-brands fa-google-drive me-1"></i>{{ $b->link }}</a>
-                                        @endif
-                                        @if ($b->title)<span class="text-muted small ms-1">— {{ $b->title }}</span>@endif
+                                <div class="bg-white border rounded-3 p-2 mb-2 shadow-sm">
+                                    <div class="d-flex align-items-center gap-1 mb-1">
+                                        <i class="fa-solid fa-align-left text-primary" style="font-size:10px;"></i>
+                                        <span class="fw-bold text-dark" style="font-size:11px; letter-spacing:0.3px;">Deskripsi Capaian</span>
+                                        <span class="text-muted ms-auto" style="font-size:10px;">{{ mb_strlen($edItem->narasi ?? '') }} karakter</span>
                                     </div>
-                                @empty
-                                    <div class="text-muted small">Belum ada bukti Prodi.</div>
-                                @endforelse
+                                    <div class="text-dark small lh-base" style="white-space: pre-wrap; word-break: break-word; font-size:12px; line-height:1.6; max-height:120px; overflow:auto; background:#f8fafc; border:1px solid #f1f5f9; border-radius:6px; padding:8px 10px;">
+                                        {{ trim($edItem->narasi ?? '') !== '' ? trim($edItem->narasi) : '— Belum ada deskripsi capaian —' }}
+                                    </div>
+                                </div>
+                                <div class="bg-light border rounded-3 p-2">
+                                    <div class="d-flex align-items-center gap-1 mb-1">
+                                        <i class="fa-solid fa-paperclip text-success" style="font-size:11px;"></i>
+                                        <span class="fw-bold text-dark" style="font-size:11px;">Bukti Prodi</span>
+                                        <span class="badge bg-white text-muted border rounded-pill ms-auto" style="font-size:10px;">{{ $edItem->attachments->count() }} file</span>
+                                    </div>
+                                    @forelse($edItem->attachments as $b)
+                                        <div class="d-flex align-items-center gap-2 bg-white border rounded-2 px-2 py-1 mb-1 small shadow-sm">
+                                            @if ($b->file_path)
+                                                <i class="fa-solid fa-file-lines text-primary"></i>
+                                                <a href="{{ asset('storage/' . $b->file_path) }}" target="_blank" class="text-primary text-truncate flex-grow-1 text-decoration-none fw-medium" style="font-size:11px;" title="{{ $b->file_name }}">{{ \Illuminate\Support\Str::limit($b->file_name, 28) }}</a>
+                                                <span class="badge bg-light text-muted border ms-1" style="font-size:9px;"><i class="fa-solid fa-download me-1"></i>PDF</span>
+                                            @elseif ($b->link)
+                                                <i class="fa-brands fa-google-drive text-success"></i>
+                                                <a href="{{ $b->link }}" target="_blank" class="text-primary text-truncate flex-grow-1 text-decoration-none" style="font-size:11px;" title="{{ $b->link }}">{{ \Illuminate\Support\Str::limit($b->link, 32) }}</a>
+                                                <span class="badge bg-success bg-opacity-10 text-success border ms-1" style="font-size:9px;">Drive</span>
+                                            @endif
+                                        </div>
+                                        @if ($b->title)<div class="text-muted small ms-4 mb-1" style="font-size:10px;">— {{ \Illuminate\Support\Str::limit($b->title, 40) }}</div>@endif
+                                    @empty
+                                        <div class="text-center py-2">
+                                            <i class="fa-regular fa-folder-open text-muted mb-1 d-block" style="font-size:18px; opacity:0.5;"></i>
+                                            <span class="text-muted small" style="font-size:11px;">Belum ada bukti Prodi.</span>
+                                        </div>
+                                    @endforelse
+                                </div>
                             @else
-                                <div class="text-muted small"><i class="fa-solid fa-circle-info me-1"></i>Indikator belum diisi Prodi pada menu Evaluasi Diri (ED).</div>
+                                <div class="text-center py-3 px-2 bg-light border border-dashed rounded-3">
+                                    <i class="fa-solid fa-circle-info text-muted mb-1 d-block" style="font-size:18px; opacity:0.4;"></i>
+                                    <div class="text-muted small lh-base" style="font-size:11px;">Indikator belum diisi Prodi<br>pada menu <strong>Evaluasi Diri (ED)</strong>.</div>
+                                    <span class="badge bg-white text-muted border mt-2" style="font-size:10px;">Menunggu klaim Prodi</span>
+                                </div>
                             @endif
                         </td>
                         <td class="px-3 py-3 align-top border-start bg-light bg-opacity-50">
@@ -265,7 +333,7 @@
                                     <div class="d-flex justify-content-between mb-1 align-items-center">
                                         <span class="badge bg-secondary text-white finding-label">Temuan {{ $idx + 1 }}</span>
                                         @if($idx > 0)
-                                        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-remove-finding border-0" title="Hapus"><i class="fa-solid fa-times"></i></button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-remove-finding border-0 icon-only-btn" title="Hapus" aria-label="Hapus"><i class="fa-solid fa-times"></i></button>
                                         @endif
                                     </div>
                                     
@@ -305,48 +373,48 @@
                         </td>
                         <td class="px-3 py-3 text-center border-start bg-light bg-opacity-50 align-middle">
                             <input type="hidden" name="finding_category" form="update-inst-{{ $inst->id }}" value="{{ $inst->finding_category }}">
-                            <span class="badge category-badge shadow-sm px-2 py-2 text-wrap lh-base w-100" style="font-size: 0.75rem;">
-                                @if($inst->finding_category == 'Melampaui Standar Nasional') <span class="bg-success text-white rounded-pill px-2 py-1">✓ Melampaui</span>
-                                @elseif($inst->finding_category == 'Sesuai dengan Standar') <span class="bg-success text-white rounded-pill px-2 py-1">✓ Sesuai</span>
-                                @elseif($inst->finding_category == 'Tidak Tercapai Ringan (KTS Minor)') <span class="bg-warning text-dark rounded-pill px-2 py-1">⚠️ KTS Minor</span>
-                                @elseif($inst->finding_category == 'Tidak Tercapai Sedang (KTS Mayor)') <span class="bg-danger rounded-pill px-2 py-1 text-white">❌ KTS Mayor</span>
-                                @elseif($inst->finding_category == 'Pelanggaran Fatal') <span class="bg-dark rounded-pill px-2 py-1 text-white">❌ Pelanggaran Fatal</span>
-                                @else <span class="bg-secondary text-white rounded-pill px-2 py-1">Pilih Kategori...</span>
+                            <div class="category-badge d-flex flex-column align-items-center gap-1">
+                                @if($inst->finding_category == 'Melampaui Standar Nasional')
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-3 py-2 fw-bold w-100" style="font-size:11px;"><i class="fa-solid fa-star me-1"></i>Melampaui<br><small class="fw-normal">Nilai 4 • Best Practice</small></span>
+                                @elseif($inst->finding_category == 'Sesuai dengan Standar')
+                                    <span class="badge bg-success text-white rounded-pill px-3 py-2 fw-bold w-100 shadow-sm" style="font-size:11px;"><i class="fa-solid fa-check me-1"></i>Sesuai<br><small class="fw-normal">Nilai 3</small></span>
+                                @elseif($inst->finding_category == 'Tidak Tercapai Ringan (KTS Minor)')
+                                    <span class="badge bg-warning text-dark rounded-pill px-3 py-2 fw-bold w-100 shadow-sm" style="font-size:11px;"><i class="fa-solid fa-triangle-exclamation me-1"></i>KTS Minor<br><small class="fw-normal">Nilai 2 • Dokumen kurang</small></span>
+                                @elseif($inst->finding_category == 'Tidak Tercapai Sedang (KTS Mayor)')
+                                    <span class="badge bg-danger text-white rounded-pill px-3 py-2 fw-bold w-100 shadow-sm" style="font-size:11px;"><i class="fa-solid fa-circle-xmark me-1"></i>KTS Mayor<br><small class="fw-normal">Nilai 1 • Sistem tidak jalan</small></span>
+                                @elseif($inst->finding_category == 'Pelanggaran Fatal')
+                                    <span class="badge bg-dark text-white rounded-pill px-3 py-2 fw-bold w-100 shadow-sm" style="font-size:11px;"><i class="fa-solid fa-skull me-1"></i>Pelanggaran Fatal<br><small class="fw-normal">Nilai 0 • Tanpa bukti</small></span>
+                                @else
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-3 py-2 w-100" style="font-size:11px;"><i class="fa-solid fa-minus me-1"></i>Belum Dinilai<br><small class="fw-normal">Pilih Nilai dulu</small></span>
                                 @endif
-                            </span>
+                            </div>
                         </td>
-                        <td class="px-3 py-3 text-center border-start">
-                            <form action="{{ route('admin.audit.instruments.update', $inst->id) }}" method="POST" id="update-inst-{{ $inst->id }}" class="d-none" enctype="multipart/form-data">
+                        <td class="px-3 py-3 text-center border-start admin-actions-cell"><div class="admin-table-actions">
+                            <form action="{{ route('admin.audit.instruments.update', $inst->id) }}" method="POST" id="update-inst-{{ $inst->id }}" enctype="multipart/form-data" style="position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; opacity:0;">
                                 @csrf
                                 @method('PUT')
                             </form>
-                            <form action="{{ route('admin.audit.instruments.destroy', $inst->id) }}" method="POST" id="delete-inst-{{ $inst->id }}" class="d-none" onsubmit="return confirm('Yakin ingin menghapus instrumen borang ini?');">
+                            <form action="{{ route('admin.audit.instruments.destroy', $inst->id) }}" method="POST" id="delete-inst-{{ $inst->id }}" style="display:none;" onsubmit="return confirm('Yakin ingin menghapus instrumen borang ini?');">
                                 @csrf
                                 @method('DELETE')
                             </form>
                             
-                            <div class="d-flex flex-column gap-2">
+                            <div class="admin-table-action-group">
                                 @if(!in_array($assignment->status, ['finalisasi', 'selesai']))
                                 @hasrole('spmi|auditor')
-                                <button type="submit" form="update-inst-{{ $inst->id }}" class="btn btn-success btn-sm shadow-sm fw-bold rounded-3">
-                                    <i class="fa-solid fa-check me-1"></i>Simpan
-                                </button>
-                                <button type="submit" form="update-inst-{{ $inst->id }}" class="btn btn-warning btn-sm shadow-sm fw-bold rounded-3 text-dark">
-                                    <i class="fa-solid fa-save me-1"></i>Edit
-                                </button>
-                                <button type="submit" form="delete-inst-{{ $inst->id }}" class="btn btn-danger btn-sm shadow-sm fw-bold rounded-3">
-                                    <i class="fa-solid fa-trash me-1"></i>Hapus
-                                </button>
+                                <button type="submit" form="update-inst-{{ $inst->id }}" class="btn btn-sm btn-outline-success icon-only-btn admin-table-action" title="Simpan" aria-label="Simpan"><i aria-hidden="true" class="fa-solid fa-check"></i></button>
+                                <button type="submit" form="update-inst-{{ $inst->id }}" class="btn btn-sm btn-outline-warning icon-only-btn admin-table-action" title="Edit" aria-label="Edit"><i aria-hidden="true" class="fa-solid fa-pen-to-square"></i></button>
+                                <button type="submit" form="delete-inst-{{ $inst->id }}" class="btn btn-sm btn-outline-danger icon-only-btn admin-table-action" title="Hapus" aria-label="Hapus"><i aria-hidden="true" class="fa-solid fa-trash"></i></button>
                                 @endhasrole
                                 @else
                                 <span class="badge bg-secondary bg-opacity-10 text-secondary border rounded-pill px-3 py-2"><i class="fa-solid fa-lock me-1"></i> Read-only</span>
                                 @endif
                             </div>
-                        </td>
+                        </div></td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="text-center py-5">
+                        <td colspan="8" class="text-center py-5">
                             <i class="fa-solid fa-folder-open fs-1 text-muted opacity-25 mb-3"></i>
                             <h6 class="fw-bold text-dark">Belum ada Instrumen</h6>
                             <p class="small text-muted mb-0">Silakan tambahkan kriteria/indikator pertama menggunakan tombol panel di atas.</p>
@@ -382,7 +450,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="finding-row mb-3 pb-3 border-opacity-25">
                     <div class="d-flex justify-content-between mb-1 align-items-center">
                         <span class="badge bg-secondary text-white finding-label">Temuan ${newIndex}</span>
-                        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-remove-finding border-0" title="Hapus"><i class="fa-solid fa-times"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-remove-finding border-0 icon-only-btn" title="Hapus" aria-label="Hapus"><i class="fa-solid fa-times"></i></button>
                     </div>
                     
                     <textarea name="findings[]" form="update-inst-${instId}" class="form-control form-control-sm border-secondary shadow-sm bg-white mb-2" rows="3" placeholder="Tuliskan temuan auditor..."></textarea>
@@ -445,24 +513,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (numScore === 4) {
                     hiddenInput.value = 'Melampaui Standar Nasional';
-                    badgeHtml = '<span class="bg-success text-white rounded-pill px-3 py-1">✓ Melampaui</span>';
+                    badgeHtml = '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-3 py-2 fw-bold w-100" style="font-size:11px;"><i class="fa-solid fa-star me-1"></i>Melampaui<br><small class="fw-normal">Nilai 4 • Best Practice</small></span>';
                 } else if (numScore === 3) {
                     hiddenInput.value = 'Sesuai dengan Standar';
-                    badgeHtml = '<span class="bg-success text-white rounded-pill px-3 py-1">✓ Sesuai</span>';
+                    badgeHtml = '<span class="badge bg-success text-white rounded-pill px-3 py-2 fw-bold w-100 shadow-sm" style="font-size:11px;"><i class="fa-solid fa-check me-1"></i>Sesuai<br><small class="fw-normal">Nilai 3</small></span>';
                 } else if (numScore === 2) {
                     hiddenInput.value = 'Tidak Tercapai Ringan (KTS Minor)';
-                    badgeHtml = '<span class="bg-warning text-dark rounded-pill px-3 py-1">⚠️ KTS Minor</span>';
+                    badgeHtml = '<span class="badge bg-warning text-dark rounded-pill px-3 py-2 fw-bold w-100 shadow-sm" style="font-size:11px;"><i class="fa-solid fa-triangle-exclamation me-1"></i>KTS Minor<br><small class="fw-normal">Nilai 2 • Dokumen kurang</small></span>';
                 } else if (numScore === 1) {
                     hiddenInput.value = 'Tidak Tercapai Sedang (KTS Mayor)';
-                    badgeHtml = '<span class="bg-danger text-white rounded-pill px-3 py-1">❌ KTS Mayor</span>';
+                    badgeHtml = '<span class="badge bg-danger text-white rounded-pill px-3 py-2 fw-bold w-100 shadow-sm" style="font-size:11px;"><i class="fa-solid fa-circle-xmark me-1"></i>KTS Mayor<br><small class="fw-normal">Nilai 1 • Sistem tidak jalan</small></span>';
                 } else if (numScore === 0) {
                     hiddenInput.value = 'Pelanggaran Fatal';
-                    badgeHtml = '<span class="bg-dark text-white rounded-pill px-3 py-1">❌ Pelanggaran Fatal</span>';
+                    badgeHtml = '<span class="badge bg-dark text-white rounded-pill px-3 py-2 fw-bold w-100 shadow-sm" style="font-size:11px;"><i class="fa-solid fa-skull me-1"></i>Pelanggaran Fatal<br><small class="fw-normal">Nilai 0 • Tanpa bukti</small></span>';
                 }
                 badgeSpan.innerHTML = badgeHtml;
             } else if (hiddenInput && badgeSpan) {
                 hiddenInput.value = '';
-                badgeSpan.innerHTML = '<span class="bg-secondary text-white rounded-pill px-3 py-1">Pilih Kategori...</span>';
+                badgeSpan.innerHTML = '<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-3 py-2 w-100" style="font-size:11px;"><i class="fa-solid fa-minus me-1"></i>Belum Dinilai<br><small class="fw-normal">Pilih Nilai dulu</small></span>';
             }
         });
     });

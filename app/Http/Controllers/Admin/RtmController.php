@@ -65,7 +65,7 @@ class RtmController extends Controller
     }
 
     /**
-     * Tarik temuan AMI untuk siklus tertentu → otomatis diisi ke Agenda Rapat.
+     * Tarik temuan AMI untuk siklus tertentu → dikembalikan sebagai data terstruktur untuk checklist.
      * Diprioritaskan temuan KTS (mayor/risiko tinggi); disusun berjenjang per auditee.
      */
     public function cycleFindings(AuditCycle $cycle)
@@ -75,58 +75,112 @@ class RtmController extends Controller
             ->get()
             ->sortBy(fn ($f) => [$f->assignment->auditee_label, $f->type === 'KTS' ? 0 : 1])
             ->map(function ($f) {
-                foreach (['description', 'corrective_action'] as $field) {
-                    if ($f->{$field}) {
-                        $f->{$field} = str_replace(["\r\n", "\n", "\r"], ' | ', $f->{$field});
-                        $f->{$field} = preg_replace('/\\\\n/', ' ', $f->{$field});
-                    }
-                }
-                return $f;
+                return [
+                    'id' => $f->id,
+                    'type' => $f->type,
+                    'criteria' => $f->criteria,
+                    'description' => $f->description,
+                    'corrective_action' => $f->corrective_action,
+                    'status' => $f->status,
+                    'auditee_label' => $f->assignment->auditee_label,
+                    'auditee_type' => $f->assignment->auditee_type_label,
+                ];
             });
 
-        $byAuditee = $findings->groupBy(fn ($f) => $f->assignment->auditee_label);
+        $byAuditee = $findings->groupBy(fn ($f) => $f['auditee_label']);
 
-        $lines = [];
-        $lines[] = 'Agenda Rapat Tinjauan Manajemen — Siklus ' . $cycle->name;
-        $lines[] = '(Temuan ditarik otomatis dari hasil audit AMI, diprioritaskan KTS)';
-        $lines[] = '';
+        $data = [
+            'cycle_name' => $cycle->name,
+            'findings' => [],
+            'total' => $findings->count(),
+            'kts' => $findings->where('type', 'KTS')->count(),
+        ];
 
         foreach ($byAuditee as $auditee => $items) {
-            $lines[] = '[' . $auditee . ']';
-            $lines[] = '';
+            $auditeeData = [
+                'auditee' => $auditee,
+                'items' => []
+            ];
             foreach ($items as $finding) {
-                $kts = $finding->type === 'KTS';
+                $kts = $finding['type'] === 'KTS';
                 $label = $kts ? 'KTS' : 'OB';
-                $status = match ($finding->status) {
+                $status = match ($finding['status']) {
                     'closed' => 'Ditindaklanjuti',
                     'in_progress' => 'Dalam proses',
                     default => 'Belum ditindaklanjuti',
                 };
 
-                $lines[] = $label . ' — ' . $finding->criteria;
-                $lines[] = 'Deskripsi: ' . ($finding->description ?: '(Kosong/Tidak terisi)');
-                if ($finding->corrective_action) {
-                    $lines[] = 'Rencana Tindak Lanjut: ' . $finding->corrective_action;
-                }
-                $lines[] = 'Status: ' . $status;
-                $lines[] = '';
+                $auditeeData['items'][] = [
+                    'id' => $finding['id'],
+                    'type' => $finding['type'],
+                    'criteria' => $finding['criteria'],
+                    'description' => $finding['description'],
+                    'corrective_action' => $finding['corrective_action'],
+                    'status' => $finding['status'],
+                    'status_label' => $status,
+                    'label' => $label,
+                    'auditee_label' => $finding['auditee_label'],
+                    'auditee_type' => $finding['auditee_type'],
+                ];
             }
+            $data['findings'][] = $auditeeData;
         }
 
         if ($findings->isEmpty()) {
-            $lines[] = 'Belum ada temuan audit pada siklus ini.';
+            $data['findings'] = [];
         }
 
-        return response()->json([
-            'agenda' => implode(PHP_EOL, $lines),
-            'count' => $findings->count(),
-            'kts' => $findings->where('type', 'KTS')->count(),
-        ]);
+        return response()->json($data);
     }
 
     public function store(Request $request)
     {
         $data = $this->validateMeeting($request);
+
+        // Jika ada temuan yang dipilih, generate agenda otomatis
+        $selectedFindings = $request->input('selected_findings');
+        if ($selectedFindings) {
+            $selectedIds = explode(',', $selectedFindings);
+            $findings = \App\Models\AuditFinding::whereIn('id', $selectedIds)
+                ->with(['assignment.academicProgram', 'assignment.unit'])
+                ->get()
+                ->sortBy(fn ($f) => [$f->assignment->auditee_label, $f->type === 'KTS' ? 0 : 1]);
+
+            $byAuditee = $findings->groupBy(fn ($f) => $f->assignment->auditee_label);
+
+            $lines = [];
+            $lines[] = 'Agenda Rapat Tinjauan Manajemen — Siklus ' . \App\Models\AuditCycle::find($data['audit_cycle_id'])->name;
+            $lines[] = '(Temuan dipilih oleh SPMI untuk dibahas di RTM)';
+            $lines[] = '';
+
+            foreach ($findings->groupBy(fn ($f) => $f->assignment->auditee_label) as $auditee => $items) {
+                $lines[] = '[' . $auditee . ']';
+                $lines[] = '';
+                foreach ($items as $finding) {
+                    $kts = $finding->type === 'KTS';
+                    $label = $kts ? 'KTS' : 'OB';
+                    $status = match ($finding->status) {
+                        'closed' => 'Ditindaklanjuti',
+                        'in_progress' => 'Dalam proses',
+                        default => 'Belum ditindaklanjuti',
+                    };
+
+                    $lines[] = $label . ' — ' . $finding->criteria;
+                    $lines[] = 'Deskripsi: ' . ($finding->description ?: '(Kosong/Tidak terisi)');
+                    if ($finding->corrective_action) {
+                        $lines[] = 'Rencana Tindak Lanjut: ' . $finding->corrective_action;
+                    }
+                    $lines[] = 'Status: ' . $status;
+                    $lines[] = '';
+                }
+            }
+
+            if ($findings->isEmpty()) {
+                $lines[] = 'Tidak ada temuan yang dipilih untuk Agenda Rapat.';
+            }
+
+            $data['agenda'] = implode(PHP_EOL, $lines);
+        }
 
         $meeting = RtmMeeting::create([
             'audit_cycle_id' => $data['audit_cycle_id'],

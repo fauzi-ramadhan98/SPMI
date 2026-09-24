@@ -11,9 +11,11 @@ use App\Models\ChecklistItem;
 use App\Models\Evaluation;
 use App\Models\EvaluationItem;
 use App\Models\EvaluationAttachment;
+use App\Models\AcademicYear;
 use App\Models\RiskRegister;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class EvaluationController extends Controller
 {
@@ -52,16 +54,25 @@ class EvaluationController extends Controller
         }
 
         $user = auth()->user();
+        $academicYears = AcademicYear::active();
         if ($user->hasRole('prodi')) {
-            return view('admin.evaluations.create_prodi');
+            if (!$user->academic_program_id) {
+                return redirect()->route('admin.evaluations.index')->with('error',
+                    'Akun Anda belum dipetakan ke Program Studi, sehingga Evaluasi Diri tidak punya target. Hubungi Administrator (menu Manajemen User) untuk mengaturnya.');
+            }
+            return view('admin.evaluations.create_prodi', compact('academicYears'));
         }
         if ($user->hasRole('unit')) {
-            return view('admin.evaluations.create_prodi');
+            if (!$user->unit_id) {
+                return redirect()->route('admin.evaluations.index')->with('error',
+                    'Akun Anda belum dipetakan ke Unit Kerja, sehingga Evaluasi Diri tidak punya target. Hubungi Administrator (menu Manajemen User) untuk mengaturnya.');
+            }
+            return view('admin.evaluations.create_prodi', compact('academicYears'));
         }
 
         $programs = AcademicProgram::where('is_active', true)->orderBy('degree_level')->orderBy('name')->get();
         $units = Unit::where('is_active', true)->orderBy('name')->get();
-        return view('admin.evaluations.create', compact('programs', 'units'));
+        return view('admin.evaluations.create', compact('programs', 'units', 'academicYears'));
     }
 
     public function store(Request $request)
@@ -70,10 +81,15 @@ class EvaluationController extends Controller
             abort(403, 'Anda tidak berhak membuat Evaluasi Diri.');
         }
 
+        $yearNames = AcademicYear::active()->pluck('name')->all();
         $request->validate([
             'name' => 'nullable|string|max:255',
-            'academic_year' => 'nullable|max:10',
+            // Poin catatan client: "Evaluasi Diri diisi pertahun"
+            'academic_year' => ['required', 'string', 'max:10', Rule::in($yearNames)],
             'semester' => 'nullable|in:Ganjil,Genap,Tahunan',
+        ], [
+            'academic_year.required' => 'Tahun Akademik wajib dipilih.',
+            'academic_year.in' => 'Tahun Akademik tidak valid. Pilih dari Master Tahun Akademik.',
         ]);
 
         $user = auth()->user();
@@ -94,10 +110,28 @@ class EvaluationController extends Controller
             $label = $targetModel->name;
         }
 
+        // Guard: akun prodi/unit belum dipetakan -> hentikan sebelum evaluable_id NULL masuk ke DB
+        if (!$id) {
+            $targetLabel = $type === Unit::class ? 'Unit Kerja' : 'Program Studi';
+            return back()->with('error', 'Akun Anda belum dipetakan ke ' . $targetLabel
+                . ', sehingga Evaluasi Diri tidak punya target. Hubungi Administrator (menu Manajemen User) untuk mengaturnya.');
+        }
+
+        // Poin catatan client: "Evaluasi Diri diisi pertahun" — satu ED per target per tahun akademik.
+        $duplicate = Evaluation::where('evaluable_type', $type)
+            ->where('evaluable_id', $id)
+            ->where('academic_year', $request->academic_year)
+            ->exists();
+        if ($duplicate) {
+            return back()->withErrors(['academic_year' => 'Evaluasi Diri untuk Tahun Akademik ' . $request->academic_year
+                . ' sudah dibuat untuk ' . $label . '. Evaluasi Diri diisi satu kali per tahun — silakan edit ED yang sudah ada melalui daftar.']);
+        }
+
         $evaluation = Evaluation::create([
             'name' => $request->name ?: ('Evaluasi Diri ' . $label . ' ' . ($request->academic_year ?? '')),
             'academic_year' => $request->academic_year,
-            'semester' => $request->semester,
+            // Default "Tahunan" sesuai ketentuan client (ED diisi pertahun)
+            'semester' => $request->semester ?: 'Tahunan',
             'evaluable_type' => $type,
             'evaluable_id' => $id,
             'status' => 'draft',
@@ -122,7 +156,7 @@ class EvaluationController extends Controller
 
     private function render(Evaluation $evaluation)
     {
-        $evaluation->load(['items.attachments', 'attachments', 'evaluable', 'creator']);
+        $evaluation->load(['items.attachments', 'items.standard', 'items.checklistItem', 'attachments', 'evaluable', 'creator']);
         $standards = QualityStandard::where('is_active', true)->orderBy('kode_standar')->get();
         $canFill = $this->canFill($evaluation);
         $canVerify = $this->canVerify();
@@ -226,11 +260,16 @@ public function updateItems(Request $request, Evaluation $evaluation)
             'items'             => 'required|array',
             'items.*.narasi'    => 'required|string',
             'items.*.self_assessment' => 'required|in:Tercapai,Belum Tercapai',
+            // Poin catatan client: skor Evaluasi Diri berada pada skala 0-4
+            'items.*.score'     => 'nullable|numeric|min:0|max:4',
         ], [
             'items.required'      => 'Belum ada indikator untuk disimpan.',
             'items.*.narasi.required' => 'Deskripsi Capaian & Analisis wajib diisi untuk setiap indikator.',
             'items.*.self_assessment.required' => 'Penilaian Mandiri (Tercapai/Belum Tercapai) wajib dipilih untuk setiap indikator.',
             'items.*.self_assessment.in' => 'Penilaian Mandiri hanya boleh bernilai Tercapai atau Belum Tercapai.',
+            'items.*.score.min'  => 'Skor hanya boleh antara 0 sampai 4.',
+            'items.*.score.max'  => 'Skor hanya boleh antara 0 sampai 4.',
+            'items.*.score.numeric' => 'Skor harus berupa angka 0 sampai 4.',
         ]);
 
         foreach ($request->input('items', []) as $itemId => $data) {
@@ -248,7 +287,7 @@ $item->update([
             ]);
         }
 
-        return back()->with('success', 'Evaluasi Diri berhasil disimpan.');
+        return redirect()->route('admin.evaluations.index')->with('success', 'Evaluasi Diri berhasil disimpan.');
     }
 
     public function destroyItem(Request $request, Evaluation $evaluation, EvaluationItem $item)

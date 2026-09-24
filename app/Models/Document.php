@@ -5,12 +5,14 @@ namespace App\Models;
 use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Document extends Model
 {
     use HasFactory, LogsActivity;
 
     protected $fillable = [
+        'code',            // Kode Dokumen (misal: DOK-001)
         'title',
         'document_type',
         'module',
@@ -26,7 +28,10 @@ class Document extends Model
         'academic_program_id',
         'unit_id',
         'audit_cycle_id',
+        'standard_decree_id',
         'doc_date',
+        'version',        // Nomor revisi dokumen (manual input)
+        'status',        // draft | aktif
     ];
 
     protected $casts = [
@@ -54,9 +59,19 @@ class Document extends Model
         return $this->belongsTo(DocumentCategory::class, 'document_category_id');
     }
 
+    public function qualityStandards(): HasMany
+    {
+        return $this->hasMany(QualityStandard::class, 'document_id');
+    }
+
     public function cycle()
     {
         return $this->belongsTo(AuditCycle::class, 'audit_cycle_id');
+    }
+
+    public function decree()
+    {
+        return $this->belongsTo(StandardDecree::class, 'standard_decree_id');
     }
 
     /**
@@ -73,3 +88,4 @@ class Document extends Model
         return 'Institusi (Umum)';
     }
 }
+?>

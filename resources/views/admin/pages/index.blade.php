@@ -40,18 +40,16 @@
                                 <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-3 py-1">Draft</span>
                             @endif
                         </td>
-                        <td class="py-3 text-center pe-4">
-                            <div class="btn-group shadow-sm border rounded p-1 btn-group-sm">
-                                <a href="{{ route('admin.pages.edit', $page->id) }}" class="btn btn-light text-warning border-0" title="Edit">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </a>
+                        <td class="py-3 text-center pe-4 admin-actions-cell"><div class="admin-table-actions">
+                            <div class="admin-table-action-group">
+                                <a href="{{ route('admin.pages.edit', $page->id) }}" class="btn btn-sm btn-outline-warning icon-only-btn admin-table-action" title="Edit" aria-label="Edit"><i aria-hidden="true" class="fa-solid fa-pen-to-square"></i></a>
                                 <form action="{{ route('admin.pages.destroy', $page->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus halaman ini?');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-light text-danger border-0"><i class="fa-solid fa-trash"></i></button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger icon-only-btn admin-table-action" aria-label="Hapus" title="Hapus"><i aria-hidden="true" class="fa-solid fa-trash"></i></button>
                                 </form>
                             </div>
-                        </td>
+                        </div></td>
                     </tr>
                     @empty
                     <tr>

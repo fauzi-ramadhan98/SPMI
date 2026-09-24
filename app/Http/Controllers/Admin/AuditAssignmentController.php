@@ -9,6 +9,8 @@ use App\Models\AuditAssignment;
 use App\Models\AcademicProgram;
 use App\Models\Unit;
 use App\Models\User;
+use App\Notifications\AuditAllocationAssigned;
+use Illuminate\Support\Facades\Notification;
 
 class AuditAssignmentController extends Controller
 {
@@ -110,9 +112,33 @@ class AuditAssignmentController extends Controller
             return back()->with('error', 'Alokasi auditor untuk auditee ini pada siklus tersebut sudah ada.');
         }
 
-        AuditAssignment::create($data);
+        $assignment = AuditAssignment::create($data);
+
+        // Catatan client: notifikasi ke Ka Prodi & Unit saat alokasi penugasan muncul
+        // ("Audit berdasarkan AMI akan dilakukan").
+        $owners = $this->auditeeOwners($assignment);
+        if ($owners->isNotEmpty()) {
+            Notification::send($owners, new AuditAllocationAssigned($assignment, 'created'));
+        }
 
         return redirect()->route('admin.audit.assignments.index')->with('success', 'Alokasi Auditor berhasil ditambahkan.');
+    }
+
+    /**
+     * Penerima notifikasi alokasi: seluruh akun Ka Prodi (role prodi) sesuai prodi
+     * yang diaudit, ATAU seluruh akun Unit kerja (role unit) sesuai unit yang diaudit.
+     */
+    protected function auditeeOwners(AuditAssignment $assignment)
+    {
+        if ($assignment->academic_program_id) {
+            return User::role('prodi')->where('academic_program_id', $assignment->academic_program_id)->get();
+        }
+
+        if ($assignment->unit_id) {
+            return User::role('unit')->where('unit_id', $assignment->unit_id)->get();
+        }
+
+        return collect();
     }
 
     public function edit(AuditAssignment $assignment)
@@ -172,7 +198,13 @@ class AuditAssignmentController extends Controller
         if ($assignment->status !== 'pending') {
             abort(403, 'Alokasi yang sudah ' . $assignment->status . ' tidak dapat dihapus untuk menjaga keutuhan data kertas kerja.');
         }
+        $owners = $this->auditeeOwners($assignment);
         $assignment->delete();
+
+        if ($owners->isNotEmpty()) {
+            Notification::send($owners, new AuditAllocationAssigned($assignment, 'cancelled'));
+        }
+
         return redirect()->route('admin.audit.assignments.index')->with('success', 'Alokasi Auditor berhasil dihapus.');
     }
 }

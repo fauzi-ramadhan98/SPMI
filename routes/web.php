@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\ChecklistItemController;
 use App\Http\Controllers\Admin\RiskRegisterController;
 use App\Http\Controllers\Admin\PimpinanController;
 use App\Http\Controllers\Admin\RtmController;
+use App\Http\Controllers\Admin\SopController;
 use App\Http\Controllers\Admin\SuratTugasController;
 use App\Http\Controllers\Admin\KertasKerjaController;
 use App\Http\Controllers\Admin\EvaluationController;
@@ -35,6 +36,7 @@ use App\Http\Controllers\Admin\FindingAttachmentController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\StandardDecreeController;
+use App\Http\Controllers\Admin\RevisiStandarController;
 use App\Http\Controllers\Admin\AcademicYearController;
 
 /*
@@ -63,7 +65,10 @@ Route::post('/survei/{id}/submit', [PublicSurveyController::class, 'submit'])->n
 | Auth Routes
 |--------------------------------------------------------------------------
 */
-Auth::routes(); // laravel UI auth routes
+// Auth routes without registration
+Auth::routes([
+    'register' => false,
+]);
 
 /*
 |--------------------------------------------------------------------------
@@ -83,7 +88,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Dokumen SPMI — semua role terautentikasi melihat; prodi/unit dibatasi ke miliknya
-    Route::resource('documents', DocumentController::class)->middleware(['role:administrator|spmi|auditor|prodi|unit|pimpinan']);
+    Route::resource('documents', DocumentController::class)->except(['show'])->middleware(['role:administrator|spmi|auditor|prodi|unit|pimpinan']);
+    // Approval route for leader (pimpinan)
+    Route::post('documents/{document}/approve', [DocumentController::class, 'approve'])
+        ->name('documents.approve')
+        ->middleware(['role:pimpinan|administrator']);
     Route::get('documents/{document}/download', [DocumentController::class, 'download'])
         ->name('documents.download')
         ->middleware(['role:administrator|spmi|auditor|prodi|unit|pimpinan']);
@@ -125,6 +134,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::middleware(['role:spmi'])->group(function () {
         // Modul Penetapan (P1): Standar Mutu (index & download ada di grup semua role)
         Route::get('quality-standards/download-template', [QualityStandardController::class, 'downloadTemplate'])->name('quality-standards.download-template');
+
+        // Modul Peningkatan Standar (P5.1): Peninjauan versi + aksi Revisi
+        Route::get('revisi-standar', [RevisiStandarController::class, 'index'])->name('revisi-standar.index');
         Route::resource('quality-standards', QualityStandardController::class)->except(['index']);
 
         // Modul Penetapan (P1): SK Penetapan Standar — CRUD draf oleh SPMI (index/sign di grup peran)
@@ -177,6 +189,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::middleware(['role:spmi|auditor|prodi|unit|pimpinan'])->group(function () {
         Route::put('audit/findings/{finding}', [AuditFindingController::class, 'update'])->name('audit.findings.update');
         Route::patch('risk-registers/{risk_register}/document-link', [RiskRegisterController::class, 'updateDocumentLink'])->name('risk-registers.update-document-link');
+        Route::get('risk-registers/template', [RiskRegisterController::class, 'downloadTemplate'])->name('risk-registers.template');
+        Route::post('risk-registers/import', [RiskRegisterController::class, 'import'])->name('risk-registers.import');
+        Route::post('risk-registers/bulk', [RiskRegisterController::class, 'bulkStore'])->name('risk-registers.bulk');
         Route::get('risk-registers/create', [RiskRegisterController::class, 'create'])->name('risk-registers.create');
         Route::post('risk-registers', [RiskRegisterController::class, 'store'])->name('risk-registers.store');
         Route::get('risk-registers/{riskRegister}/edit', [RiskRegisterController::class, 'edit'])->name('risk-registers.edit');
@@ -186,6 +201,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         // SPMI — validasi (approve) & beri catatan revisi pada profil risiko Risk Owner
         Route::post('risk-registers/{riskRegister}/validate', [RiskRegisterController::class, 'validateRisk'])->name('risk-registers.validate')->middleware('role:spmi');
         Route::post('risk-registers/{riskRegister}/note', [RiskRegisterController::class, 'note'])->name('risk-registers.note')->middleware('role:spmi');
+
+        // Poin catatan client — SPMI menugaskan Prodi/Unit isi Risk Register tiap semester
+        Route::post('risk-registers/assignments', [RiskRegisterController::class, 'assignStore'])->name('risk-registers.assignments.store')->middleware('role:spmi');
+        Route::delete('risk-registers/assignments/{assignment}', [RiskRegisterController::class, 'assignDestroy'])->name('risk-registers.assignments.destroy')->middleware('role:spmi');
 
         // Bukti perbaikan per temuan (RTL)
         Route::post('audit/findings/{finding}/attachments', [FindingAttachmentController::class, 'store'])->name('audit.findings.attachments.store');
@@ -222,6 +241,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('checklist-items', [ChecklistItemController::class, 'index'])->name('checklist-items.index');
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
         Route::post('reports/ami-pdf', [ReportController::class, 'generateAmiPdf'])->name('reports.ami_pdf');
+        // Level 3 review detail untuk SPMI (atasan audit)
+        Route::get('reports/{assignment}/review', [ReportController::class, 'reviewDetail'])->name('reports.review')->middleware('role:spmi|administrator');
+        Route::post('reports/{assignment}/approve', [ReportController::class, 'approveLha'])->name('reports.approve')->middleware('role:spmi|administrator');
+        Route::post('reports/{assignment}/reminder', [ReportController::class, 'reminderAuditor'])->name('reports.reminder')->middleware('role:spmi|administrator');
+        Route::post('reports/{assignment}/decide', [ReportController::class, 'decideRtl'])->name('reports.decide')->middleware('role:spmi|administrator');
     });
 
     // Standar Mutu — index dapat dilihat (kecuali prodi); CRUD khusus spmi
@@ -239,6 +263,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('standard-decrees/{decree}/review', [StandardDecreeController::class, 'review'])->name('standard-decrees.review');
         Route::put('standard-decrees/{decree}/review', [StandardDecreeController::class, 'reviewUpdate'])->name('standard-decrees.review-update');
         Route::post('standard-decrees/{decree}/verify', [StandardDecreeController::class, 'verify'])->name('standard-decrees.verify');
+        Route::post('standard-decrees/{decree}/reject', [StandardDecreeController::class, 'reject'])->name('standard-decrees.reject');
     });
 
     // RTM — Rapat Tinjauan Manajemen (role-aware):
@@ -269,12 +294,37 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::middleware(['role:spmi|pimpinan|administrator'])->group(function () {
         Route::get('standard-decrees', [StandardDecreeController::class, 'index'])->name('standard-decrees.index');
         Route::get('standard-decrees/auditor', [StandardDecreeController::class, 'auditorIndex'])->name('standard-decrees.auditor');
+
+        // Modul Peningkatan Standar (P5.2): daftar SK Perubahan (hasil revisi)
+        Route::get('standard-decrees/perubahan', [StandardDecreeController::class, 'perubahanIndex'])->name('standard-decrees.perubahan');
         Route::get('standard-decrees/{decree}/pdf', [StandardDecreeController::class, 'pdf'])->name('standard-decrees.pdf');
         Route::get('standard-decrees/{decree}/download-file', [StandardDecreeController::class, 'downloadFile'])->name('standard-decrees.download-file');
     });
     // Unggah file SK — khusus SPMI & Administrator (upload dokumen final bukan beban pimpinan)
     Route::middleware(['role:spmi|administrator'])->group(function () {
         Route::post('standard-decrees/{decree}/upload-file', [StandardDecreeController::class, 'uploadFile'])->name('standard-decrees.upload-file');
+    });
+
+    // SOP UNIT — Pengajuan & Review SOP (Unit buat, SPMI review)
+    Route::middleware(['role:unit|spmi|administrator|super_admin'])->group(function () {
+        Route::get('sops', [SopController::class, 'index'])->name('sops.index');
+    });
+    Route::middleware(['role:unit'])->group(function () {
+        Route::get('sops/create', [SopController::class, 'create'])->name('sops.create');
+        Route::post('sops', [SopController::class, 'store'])->name('sops.store');
+        Route::post('sops/{sop}/upload-revision', [SopController::class, 'uploadRevision'])->name('sops.upload-revision');
+    });
+    Route::middleware(['role:unit|spmi|administrator|super_admin'])->group(function () {
+        Route::get('sops/{sop}', [SopController::class, 'show'])->name('sops.show');
+    });
+    Route::middleware(['role:spmi|administrator|super_admin'])->group(function () {
+        Route::get('sops/{sop}/review', [SopController::class, 'review'])->name('sops.review');
+        Route::post('sops/{sop}/review', [SopController::class, 'reviewStore'])->name('sops.review');
+    });
+    // Download/Preview SOP — unit (milik sendiri), spmi|admin (semua)
+    Route::middleware(['role:unit|spmi|administrator|super_admin'])->group(function () {
+        Route::get('sops/{sop}/download', [SopController::class, 'download'])->name('sops.download');
+        Route::get('sops/{sop}/preview', [SopController::class, 'preview'])->name('sops.preview');
     });
 
 });

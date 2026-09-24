@@ -9,7 +9,7 @@
         <div class="card card-custom shadow-sm border-0 h-100">
             <div class="card-header-custom bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
                 <h6 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-circle-info me-2"></i> Detail Survei</h6>
-                <a href="{{ route('admin.surveys.index') }}" class="btn btn-sm btn-light rounded-circle text-muted" title="Kembali"><i class="fa-solid fa-arrow-left"></i></a>
+                <a href="{{ route('admin.surveys.index') }}" class="btn btn-sm btn-light rounded-circle text-muted icon-only-btn" title="Kembali" aria-label="Kembali"><i class="fa-solid fa-arrow-left"></i></a>
             </div>
             <div class="card-body p-4 pt-3">
                 <div class="mb-4">
@@ -42,7 +42,7 @@
                         <span class="fw-semibold mb-2">Tautan Publik:</span>
                         <div class="input-group input-group-sm">
                             <input type="text" class="form-control text-muted bg-light border-0" value="{{ route('public.surveys.fill', $survey->id) }}" id="surveyLnk" readonly>
-                            <button class="btn btn-outline-primary shadow-sm rounded-end border" type="button" onclick="copyLink()">
+                            <button class="btn btn-outline-primary shadow-sm rounded-end border icon-only-btn" type="button" onclick="copyLink()" aria-label="Salin tautan">
                                 <i class="fa-regular fa-copy"></i>
                             </button>
                         </div>
@@ -110,7 +110,7 @@
                     <form action="{{ route('admin.surveys.questions.destroy', [$survey->id, $q->id]) }}" method="POST" class="position-absolute top-0 end-0 mt-3 me-3">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-sm btn-light text-danger rounded-circle shadow-sm" title="Hapus Pertanyaan" onclick="return confirm('Hapus pertanyaan ini?')">
+                        <button type="submit" class="btn btn-sm btn-light text-danger rounded-circle shadow-sm icon-only-btn" title="Hapus Pertanyaan" onclick="return confirm('Hapus pertanyaan ini?')" aria-label="Hapus Pertanyaan">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </form>

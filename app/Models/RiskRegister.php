@@ -13,7 +13,9 @@ class RiskRegister extends Model
         'academic_program_id',
         'unit_id',
         'academic_year',
+        'semester',
         'quality_standard_id',
+        'risk_category',
         'source',
         'standar_mutu',
         'butir_tilik',
@@ -85,5 +87,10 @@ class RiskRegister extends Model
             'revision' => 'Perlu Revisi',
             default    => 'Menunggu Review',
         };
+    }
+
+    public function getRiskCategoryLabelAttribute(): string
+    {
+        return $this->risk_category ?? '-';
     }
 }

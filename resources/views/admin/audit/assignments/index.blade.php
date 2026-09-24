@@ -49,12 +49,73 @@
                     </select>
                     <button type="submit" class="btn btn-primary shadow-sm fw-bold rounded-end-pill px-4 border-0">Filter</button>
                     @if(request('cycle_id'))
-                        <a href="{{ route('admin.audit.assignments.index') }}" class="btn btn-light shadow-sm ms-2 rounded-pill px-3 border-0 text-danger"><i class="fa-solid fa-xmark"></i></a>
+                        <a href="{{ route('admin.audit.assignments.index') }}" class="btn btn-light shadow-sm ms-2 rounded-pill px-3 border-0 text-danger icon-only-btn" aria-label="Hapus"><i class="fa-solid fa-xmark"></i></a>
                     @endif
                 </div>
             </div>
         </form>
     </div>
+
+    {{-- Poin catatan client: Info Jadwal Audit — jadwal tampil di layar, bukan hanya di PDF surat tugas --}}
+    @if($auditee && $assignments->count())
+    <div class="card-body border-top">
+        <div class="alert alert-info border-0 bg-info bg-opacity-10 rounded-4 mb-0">
+            <div class="d-flex align-items-center mb-3">
+                <div class="bg-info bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 42px; height: 42px;">
+                    <i class="fa-solid fa-calendar-days text-info"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-0">Info Jadwal Audit</h6>
+                    <div class="small text-muted mb-0">Periode pelaksanaan Audit Mutu Internal (AMI) beserta auditor yang ditugaskan untuk mengaudit Anda.</div>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0 bg-white">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Siklus AMI</th>
+                            <th>Tahun Akademik</th>
+                            <th>Semester</th>
+                            <th>Hari / Tanggal Pelaksanaan</th>
+                            <th class="text-center">Keterangan</th>
+                            <th>Auditor Ditugaskan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach($assignments as $assignment)
+                        @php $cy = $assignment->cycle; @endphp
+                        <tr>
+                            <td class="fw-semibold">{{ $cy?->name ?? '—' }}</td>
+                            <td>{{ $cy?->academic_year ?? '—' }}</td>
+                            <td>{{ $cy?->semester ?? '—' }}</td>
+                            <td>
+                                @if($cy?->start_date)
+                                    {{ $cy->start_date->copy()->locale('id')->isoFormat('dddd, D MMMM Y') }}
+                                    &mdash; {{ $cy->end_date?->copy()->locale('id')->isoFormat('D MMMM Y') ?? '—' }}
+                                @else
+                                    <span class="text-muted fst-italic">Belum ditetapkan</span>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                @if(!$cy?->start_date)
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-1">Belum ada jadwal</span>
+                                @elseif(now()->lt($cy->start_date))
+                                    <span class="badge bg-info-subtle text-info rounded-pill px-3 py-1">Akan datang &bull; H-{{ (int) abs(now()->startOfDay()->diffInDays($cy->start_date->copy()->startOfDay())) }}</span>
+                                @elseif($cy->end_date && now()->gte($cy->end_date->copy()->addDay()->startOfDay()))
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-1">Periode berakhir</span>
+                                @else
+                                    <span class="badge bg-warning-subtle text-warning rounded-pill px-3 py-1">Dalam periode</span>
+                                @endif
+                            </td>
+                            <td>{{ $assignment->auditor_name ?? '—' }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <div class="card-body p-0 border-top">
         <div class="table-responsive">
@@ -63,7 +124,7 @@
                     <tr>
                         <th class="ps-4 py-3">Auditee (Teraudit)</th>
                         <th class="py-3">Auditor Ditugaskan</th>
-                        <th class="py-3">Siklus AMI</th>
+                        <th class="py-3">Siklus &amp; Jadwal</th>
                         <th class="py-3 text-center">Status Audit</th>
                         <th class="py-3 text-center pe-4">Instrumen & Temuan</th>
                     </tr>
@@ -93,6 +154,11 @@
                         </td>
                         <td class="py-4">
                             <span class="text-muted small"><i class="fa-solid fa-rotate fa-fw me-1"></i> {{ $assignment->cycle->name }}</span>
+                            @if($assignment->cycle->start_date)
+                            <div class="small mt-1"><i class="fa-regular fa-calendar fa-fw me-1 text-primary"></i>
+                                {{ $assignment->cycle->start_date->format('d/m/Y') }} &mdash; {{ $assignment->cycle->end_date?->format('d/m/Y') ?? '—' }}
+                            </div>
+                            @endif
                         </td>
                         <td class="py-4 text-center">
                             {{-- Status audit berjalan otomatis (system-driven), bukan dropdown manual --}}
@@ -109,68 +175,48 @@
                             <div class="form-text text-muted small mt-1" style="font-size: 0.7rem;">Otomatis: Pending → Berlangsung → Finalisasi → Selesai</div>
                             @endhasrole
                         </td>
-                        <td class="py-4 text-center pe-4">
-                            <div class="d-flex justify-content-center gap-2">
+                        <td class="py-4 text-center pe-4 admin-actions-cell"><div class="admin-table-actions">
+                            <div class="admin-table-action-group">
                                 @hasrole('auditor')
-                                <a href="{{ route('admin.surat-tugas.generate', $assignment->id) }}" class="btn btn-outline-success btn-sm rounded px-3 py-1 fw-bold shadow-sm" title="Unduh Surat Tugas resmi dari SPMI">
-                                    <i class="fa-solid fa-file-pdf me-1"></i> Surat Tugas
-                                </a>
+                                <a href="{{ route('admin.surat-tugas.generate', $assignment->id) }}" class="btn btn-sm btn-outline-info icon-only-btn admin-table-action" title="Unduh Surat Tugas resmi dari SPMI" aria-label="Unduh Surat Tugas resmi dari SPMI"><i aria-hidden="true" class="fa-solid fa-file-pdf"></i></a>
                                 @if(in_array($assignment->status, ['pending', 'berlangsung']))
                                 <form action="{{ route('admin.audit.assignments.update-status', $assignment->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Finalisasi Kertas Kerja ini? Setelah difinalisasi, borang dan temuan terkunci.');">
                                     @csrf
                                     <input type="hidden" name="action" value="finalisasi">
-                                    <button type="submit" class="btn btn-outline-info btn-sm rounded px-3 py-1 fw-bold shadow-sm" title="Kunci Kertas Kerja agar borang & temuan tidak dapat diubah lagi">
-                                        <i class="fa-solid fa-lock me-1"></i> Finalisasi
-                                    </button>
+                                    <button type="submit" class="btn btn-sm btn-outline-success icon-only-btn admin-table-action" title="Kunci Kertas Kerja agar borang & temuan tidak dapat diubah lagi" aria-label="Kunci Kertas Kerja agar borang & temuan tidak dapat diubah lagi"><i aria-hidden="true" class="fa-solid fa-lock"></i></button>
                                 </form>
                                 @endif
                                 @endhasrole
                                 @hasrole('spmi')
-                                <a href="{{ route('admin.surat-tugas.generate', $assignment->id) }}" class="btn btn-outline-success btn-sm rounded px-3 py-1 fw-bold shadow-sm" target="_blank" title="Unduh Surat Tugas auditor ini (PDF)">
-                                    <i class="fa-solid fa-file-pdf me-1"></i> Surat Tugas
-                                </a>
+                                <a href="{{ route('admin.surat-tugas.generate', $assignment->id) }}" class="btn btn-sm btn-outline-info icon-only-btn admin-table-action" target="_blank" title="Unduh Surat Tugas auditor ini (PDF)" aria-label="Unduh Surat Tugas auditor ini (PDF)"><i aria-hidden="true" class="fa-solid fa-file-pdf"></i></a>
                                 @if(in_array($assignment->status, ['finalisasi', 'selesai']))
                                     <form action="{{ route('admin.audit.assignments.update-status', $assignment->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Buka kembali kertas kerja menjadi Berlangsung? Auditor dapat memperbaiki borang/temuan.');">
                                         @csrf
                                         <input type="hidden" name="action" value="buka_kembali">
-                                        <button type="submit" class="btn btn-outline-warning btn-sm rounded px-3 py-1 fw-bold shadow-sm" title="Kembalikan ke status Berlangsung agar auditor dapat edit kembali">
-                                            <i class="fa-solid fa-rotate-left me-1"></i> Buka Kembali
-                                        </button>
+                                        <button type="submit" class="btn btn-sm btn-outline-warning icon-only-btn admin-table-action" title="Kembalikan ke status Berlangsung agar auditor dapat edit kembali" aria-label="Kembalikan ke status Berlangsung agar auditor dapat edit kembali"><i aria-hidden="true" class="fa-solid fa-rotate-left"></i></button>
                                     </form>
                                     @if($assignment->status === 'finalisasi')
                                     <form action="{{ route('admin.audit.assignments.update-status', $assignment->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tetapkan hasil audit ini menjadi SELESAI? Laporan AMI dapat langsung diterbitkan.');">
                                         @csrf
                                         <input type="hidden" name="action" value="selesai">
-                                        <button type="submit" class="btn btn-outline-success btn-sm rounded px-3 py-1 fw-bold shadow-sm" title="Dari Finalisasi: tetapkan hasil audit sebagai Selesai">
-                                            <i class="fa-solid fa-check me-1"></i> Selesaikan
-                                        </button>
+                                        <button type="submit" class="btn btn-sm btn-outline-success icon-only-btn admin-table-action" title="Dari Finalisasi: tetapkan hasil audit sebagai Selesai" aria-label="Dari Finalisasi: tetapkan hasil audit sebagai Selesai"><i aria-hidden="true" class="fa-solid fa-check"></i></button>
                                     </form>
                                     @endif
                                 @endif
                                 @endhasrole
                                 @if($auditee)
                                     {{-- Prodi/Unit: Instrumen mengarah ke Evaluasi Diri milik auditee --}}
-                                    <a href="{{ route('admin.evaluations.index') }}" class="btn btn-outline-primary btn-sm rounded px-3 py-1 fw-bold shadow-sm" title="Lihat Evaluasi Diri Anda untuk dibandingkan dengan standar yang akan diaudit">
-                                        <i class="fa-solid fa-clipboard-list me-1"></i> Instrumen
-                                    </a>
+                                    <a href="{{ route('admin.evaluations.index') }}" class="btn btn-sm btn-outline-primary icon-only-btn admin-table-action" title="Lihat Evaluasi Diri Anda untuk dibandingkan dengan standar yang akan diaudit" aria-label="Lihat Evaluasi Diri Anda untuk dibandingkan dengan standar yang akan diaudit"><i aria-hidden="true" class="fa-solid fa-clipboard-list"></i></a>
                                     {{-- Prodi/Unit: Temuan hanya boleh dibaca setelah audit dikunci (finalisasi/selesai) --}}
                                     @if(in_array($assignment->status, ['finalisasi', 'selesai']))
-                                        <a href="{{ route('admin.audit.findings.index', $assignment->id) }}" class="btn btn-outline-danger btn-sm rounded px-3 py-1 fw-bold shadow-sm" title="Hasil Temuan Audit telah final">
-                                            <i class="fa-solid fa-triangle-exclamation me-1"></i> Temuan
-                                        </a>
+                                        <a href="{{ route('admin.audit.findings.index', $assignment->id) }}" class="btn btn-sm btn-outline-primary icon-only-btn admin-table-action" title="Hasil Temuan Audit telah final" aria-label="Hasil Temuan Audit telah final"><i aria-hidden="true" class="fa-solid fa-triangle-exclamation"></i></a>
                                     @else
-                                        <span class="btn btn-outline-secondary btn-sm rounded px-3 py-1 fw-bold shadow-sm disabled" style="pointer-events:none;"
-                                            title="Temuan tersedia setelah status audit dikunci (Finalisasi/Selesai)">
-                                            <i class="fa-solid fa-lock me-1"></i> Temuan
-                                        </span>
+                                        <span class="btn btn-sm btn-outline-secondary icon-only-btn admin-table-action disabled" style="pointer-events:none;"
+                                            title="Temuan tersedia setelah status audit dikunci (Finalisasi/Selesai)" aria-label="Temuan tersedia setelah status audit dikunci (Finalisasi/Selesai)" aria-disabled="true"><i aria-hidden="true" class="fa-solid fa-lock"></i></span>
                                     @endif
                                 @else
-                                <a href="{{ route('admin.audit.instruments.index', $assignment->id) }}" class="btn btn-outline-primary btn-sm rounded px-3 py-1 fw-bold shadow-sm" title="Pengisian Borang / Instrumen">
-                                    <i class="fa-solid fa-clipboard-list me-1"></i> Instrumen
-                                </a>
-                                <a href="{{ route('admin.audit.findings.index', $assignment->id) }}" class="btn btn-outline-danger btn-sm rounded px-3 py-1 fw-bold shadow-sm" title="Catatan Temuan (PTK)">
-                                    <i class="fa-solid fa-triangle-exclamation me-1"></i> Temuan
-                                </a>
+                                <a href="{{ route('admin.audit.instruments.index', $assignment->id) }}" class="btn btn-sm btn-outline-primary icon-only-btn admin-table-action" title="Pengisian Borang / Instrumen" aria-label="Pengisian Borang / Instrumen"><i aria-hidden="true" class="fa-solid fa-clipboard-list"></i></a>
+                                <a href="{{ route('admin.audit.findings.index', $assignment->id) }}" class="btn btn-sm btn-outline-primary icon-only-btn admin-table-action" title="Catatan Temuan (PTK)" aria-label="Catatan Temuan (PTK)"><i aria-hidden="true" class="fa-solid fa-triangle-exclamation"></i></a>
                                 @endif
 
                                 @hasrole('spmi')
@@ -178,18 +224,14 @@
                                 <form action="{{ route('admin.audit.assignments.destroy', $assignment->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus alokasi ini beserta seluruh nilai dan temuannya?');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-outline-secondary btn-sm rounded shadow-sm" title="Hapus Alokasi">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger icon-only-btn admin-table-action" title="Hapus Alokasi" aria-label="Hapus Alokasi"><i aria-hidden="true" class="fa-solid fa-trash"></i></button>
                                 </form>
                                 @else
-                                <span class="btn btn-outline-secondary btn-sm rounded shadow-sm disabled" style="pointer-events:none;" title="Hapus dikunci: alokasi sudah {{ $assignment->status }}">
-                                    <i class="fa-solid fa-lock"></i>
-                                </span>
+                                <span class="btn btn-sm btn-outline-secondary icon-only-btn admin-table-action disabled" style="pointer-events:none;" title="Hapus dikunci: alokasi sudah {{ $assignment->status }}" aria-label="Hapus dikunci: alokasi sudah {{ $assignment->status }}" aria-disabled="true"><i aria-hidden="true" class="fa-solid fa-lock"></i></span>
                                 @endif
                                 @endhasrole
                             </div>
-                        </td>
+                        </div></td>
                     </tr>
                     @empty
                     <tr>

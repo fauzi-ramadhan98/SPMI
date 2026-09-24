@@ -229,7 +229,7 @@
                                     @if(!$locked)
                                         <form action="{{ route('admin.rtm.instructions.destroy', $instruction->id) }}" method="POST" onsubmit="return confirm('Hapus instruksi ini?')">
                                             @csrf @method('DELETE')
-                                            <button class="btn btn-sm btn-outline-danger rounded-circle"><i class="fa-solid fa-trash"></i></button>
+                                            <button class="btn btn-sm btn-outline-danger rounded-circle icon-only-btn" aria-label="Hapus"><i class="fa-solid fa-trash"></i></button>
                                         </form>
                                     @endif
                                 </div>

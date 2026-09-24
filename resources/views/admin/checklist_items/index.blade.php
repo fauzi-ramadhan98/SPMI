@@ -26,6 +26,11 @@
                 <i class="fa-solid fa-chevron-down text-primary small"></i>
                 <span class="badge bg-secondary bg-opacity-10 text-secondary fw-bold">{{ $std->kode_standar ?: '—' }}</span>
                 <span>{{ $std->name ?: $std->pernyataan_standar }}</span>
+                @if($std->document)
+                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 fw-normal" title="Dokumen: {{ $std->document->title }}">
+                        <i class="fa-solid fa-file-lines me-1"></i>{{ $std->document->code }}@if($std->document->decree) ({{ $std->document->decree->sk_no }})@endif
+                    </span>
+                @endif
                 <span class="badge {{ $std->type == 'IKU' ? 'bg-primary' : 'bg-info text-dark' }}">{{ $std->type }}</span>
                 <span class="badge bg-light text-dark border">{{ $std->checklistItems->count() }} butir</span>
             </button>
@@ -70,10 +75,10 @@
                                         <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-2 py-1" style="font-size:10px;">Nonaktif</span>
                                     @endif
                                 </td>
-                                <td class="py-2 text-center pe-4">
+                                <td class="py-2 text-center pe-4 admin-actions-cell"><div class="admin-table-actions">
                                     @hasrole('spmi')
-                                    <div class="d-flex justify-content-center gap-1">
-                                        <button type="button" class="btn btn-sm btn-outline-warning rounded-pill p-1 px-2 shadow-sm"
+                                    <div class="admin-table-action-group">
+                                        <button type="button" class="btn btn-sm btn-outline-warning icon-only-btn admin-table-action"
                                                 data-bs-toggle="modal" data-bs-target="#modalEditButir"
                                                 data-id="{{ $item->id }}"
                                                 data-url="{{ route('admin.checklist-items.update', $item->id) }}"
@@ -90,19 +95,15 @@
                                                 data-max-score="{{ $item->max_score }}"
                                                 data-sort="{{ $item->sort_order }}"
                                                 data-active="{{ $item->is_active ? 1 : 0 }}"
-                                                title="Edit" style="font-size:12px;">
-                                            <i class="fa-solid fa-pen-to-square"></i>
-                                        </button>
+                                                title="Edit" style="font-size:12px;" aria-label="Edit"><i aria-hidden="true" class="fa-solid fa-pen-to-square"></i></button>
                                         <form action="{{ route('admin.checklist-items.destroy', $item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus butir daftar tilik ini?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill p-1 px-2 shadow-sm" title="Hapus" style="font-size:12px;">
-                                                <i class="fa-solid fa-trash"></i>
-                                            </button>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger icon-only-btn admin-table-action" title="Hapus" style="font-size:12px;" aria-label="Hapus"><i aria-hidden="true" class="fa-solid fa-trash"></i></button>
                                         </form>
                                     </div>
                                     @endhasrole
-                                </td>
+                                </div></td>
                             </tr>
                             @empty
                             <tr>
@@ -142,13 +143,21 @@
                 <form action="{{ route('admin.checklist-items.store') }}" method="POST" id="formTambahButir">
                     @csrf
                     <div class="mb-3">
-                        <label class="form-label fw-bold small">Standar Mutu <span class="text-danger">*</span></label>
-                        <select name="quality_standard_id" id="standard_add" class="form-select" required>
-                            <option value="">-- Pilih Standar Mutu --</option>
-                            @foreach($standardOptions as $std)
-                                <option value="{{ $std->id }}">{{ ($std->kode_standar ?: '—') . ' - ' . ($std->name ?: $std->pernyataan_standar) }}</option>
+                        <label class="form-label fw-bold small">Dokumen Mutu <span class="text-danger">*</span></label>
+                        <select name="document_id" id="document_add" class="form-select" required>
+                            <option value="">-- Pilih Dokumen Mutu --</option>
+                            @foreach($documents as $doc)
+                                <option value="{{ $doc->id }}">{{ $doc->code }} — {{ $doc->title }}@if($doc->decree) (SK: {{ $doc->decree->sk_no }})@endif</option>
                             @endforeach
                         </select>
+                        <div class="form-text">Pilih dokumen mutu terlebih dahulu, standar akan muncul sesuai dokumen.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Standar Mutu <span class="text-danger">*</span></label>
+                        <select name="quality_standard_id" id="standard_add" class="form-select" required disabled>
+                            <option value="">-- Pilih Dokumen Mutu terlebih dahulu --</option>
+                        </select>
+                        <div id="preview_standard_add" class="form-text text-muted small mt-1"></div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold small">Pilih IKU / IKT Terkait <span class="text-danger">*</span></label>
@@ -310,6 +319,45 @@ function findStandard(id) {
     });
 }
 
+function populateStandardSelect(selectEl, documentId, selectedStdId) {
+    selectEl.innerHTML = '<option value="">-- Pilih Standar Mutu --</option>';
+    if (!documentId) {
+        selectEl.disabled = true;
+        selectEl.innerHTML = '<option value="">-- Pilih Dokumen Mutu terlebih dahulu --</option>';
+        return;
+    }
+    var filtered = CHECKLIST_STANDARDS.filter(function (s) {
+        return String(s.document_id) === String(documentId);
+    });
+    if (!filtered.length) {
+        selectEl.disabled = true;
+        selectEl.innerHTML = '<option value="">-- Tidak ada standar untuk dokumen ini --</option>';
+        return;
+    }
+    selectEl.disabled = false;
+    filtered.forEach(function (std) {
+        var opt = document.createElement('option');
+        opt.value = std.id;
+        var label = std.kode_standar + ' \u2014 ';
+        var stmt = std.pernyataan_standar || std.name || '';
+        label += stmt.length > 60 ? stmt.substring(0, 60) + '...' : (stmt || '(tanpa pernyataan)');
+        opt.textContent = label;
+        if (selectedStdId && String(std.id) === String(selectedStdId)) opt.selected = true;
+        selectEl.appendChild(opt);
+    });
+}
+
+function updateStandardPreview(selectEl, previewId) {
+    var preview = document.getElementById(previewId);
+    if (!preview) return;
+    var opt = selectEl.selectedOptions[0];
+    if (!opt || !opt.value) { preview.textContent = ''; return; }
+    var std = findStandard(opt.value);
+    if (!std) { preview.textContent = ''; return; }
+    var full = std.pernyataan_standar || std.name || '(tanpa pernyataan)';
+    preview.innerHTML = '<strong>' + std.kode_standar + '</strong> \u2014 ' + full;
+}
+
 function populateIndicatorSelect(selectEl, standardId, selectedKey) {
     selectEl.innerHTML = '<option value="">-- Pilih IKU / IKT --</option>';
     var preview = document.getElementById(selectEl.dataset.previewTarget);
@@ -358,6 +406,7 @@ function updateIndicatorPreview(selectEl) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    var docSelectAdd = document.getElementById('document_add');
     var stdSelectAdd = document.getElementById('standard_add');
     var indSelectAdd = document.getElementById('indicator_key_add');
     var indSelectEdit = document.getElementById('indicator_key_edit');
@@ -366,12 +415,27 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btnTambahButir').addEventListener('click', function() {
         document.getElementById('formTambahButir').reset();
         document.getElementById('is_active_add').checked = true;
-        populateIndicatorSelect(indSelectAdd, stdSelectAdd.value, null);
+        stdSelectAdd.innerHTML = '<option value="">-- Pilih Dokumen Mutu terlebih dahulu --</option>';
+        stdSelectAdd.disabled = true;
+        indSelectAdd.innerHTML = '<option value="">-- Pilih Standar Mutu terlebih dahulu --</option>';
+        indSelectAdd.disabled = true;
+        var previewStd = document.getElementById('preview_standard_add');
+        if (previewStd) previewStd.textContent = '';
     });
 
-    // Dropdown berantai: pilih standar -> isi IKU/IKT
+    // Cascading: Pilih Dokumen -> Isi Standar
+    docSelectAdd.addEventListener('change', function() {
+        populateStandardSelect(stdSelectAdd, this.value, null);
+        indSelectAdd.innerHTML = '<option value="">-- Pilih Standar Mutu terlebih dahulu --</option>';
+        indSelectAdd.disabled = true;
+        var previewStd = document.getElementById('preview_standard_add');
+        if (previewStd) previewStd.textContent = '';
+    });
+
+    // Cascading: Pilih Standar -> Isi IKU/IKT + preview
     stdSelectAdd.addEventListener('change', function() {
         populateIndicatorSelect(indSelectAdd, this.value, null);
+        updateStandardPreview(stdSelectAdd, 'preview_standard_add');
     });
 
     indSelectAdd.addEventListener('change', function() {

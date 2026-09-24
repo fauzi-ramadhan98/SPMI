@@ -32,7 +32,7 @@
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0 small">
                         <thead class="bg-light text-muted text-uppercase">
-                            <tr><th class="ps-4">Auditee</th><th>Siklus</th><th>Status</th><th class="text-end pe-4">Aksi</th></tr>
+                            <tr><th class="ps-4">Auditee</th><th>Siklus</th><th>Status</th><th class="text-center pe-4">Aksi</th></tr>
                         </thead>
                         <tbody>
                         @forelse($assignments as $a)
@@ -44,10 +44,10 @@
                                     @elseif($a->status === 'berlangsung')<span class="badge bg-warning-subtle text-warning">Berlangsung</span>
                                     @else<span class="badge bg-secondary-subtle text-secondary">Menunggu</span>@endif
                                 </td>
-                                <td class="text-end pe-4">
-                                    <a href="{{ route('admin.audit.instruments.index', $a->id) }}" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-clipboard-list me-1"></i>Kertas Kerja</a>
-                                    <a href="{{ route('admin.audit.findings.index', $a->id) }}" class="btn btn-sm btn-outline-info"><i class="fa-solid fa-magnifying-glass me-1"></i>Temuan</a>
-                                </td>
+                                <td class="text-center pe-4 admin-actions-cell"><div class="admin-table-actions">
+                                    <a href="{{ route('admin.audit.instruments.index', $a->id) }}" class="btn btn-sm btn-outline-primary icon-only-btn admin-table-action" title="Kertas Kerja" aria-label="Kertas Kerja"><i aria-hidden="true" class="fa-solid fa-clipboard-list"></i></a>
+                                    <a href="{{ route('admin.audit.findings.index', $a->id) }}" class="btn btn-sm btn-outline-info icon-only-btn admin-table-action" title="Temuan" aria-label="Temuan"><i aria-hidden="true" class="fa-solid fa-magnifying-glass"></i></a>
+                                </div></td>
                             </tr>
                         @empty
                             <tr><td colspan="4" class="text-center py-4 text-muted">Belum ada penugasan untuk Anda.</td></tr>

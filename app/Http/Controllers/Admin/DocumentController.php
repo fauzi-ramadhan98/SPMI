@@ -84,11 +84,14 @@ class DocumentController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'code' => 'required|string|max:255|unique:documents,code',
             'title' => 'required|string|max:255',
             'module' => 'required|in:dokumen_mutu,surat_tugas,rtm',
             'document_category_id' => 'required|exists:document_categories,id',
             'file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png|max:10240', // Max 10MB
             'is_public' => 'boolean',
+            'version' => 'nullable|integer',
+            // Status otomatis 'draft', tidak perlu input user
         ]);
 
         $file = $request->file('file');
@@ -96,7 +99,10 @@ class DocumentController extends Controller
         // Simpan di private disk
         $path = $file->store('documents', 'local');
 
-        Document::create([
+        $document = Document::create([
+            'code' => $request->code,
+            'version' => $request->version ?? 0,
+            'status' => 'draft', // Selalu draft saat pertama dibuat
             'title' => $request->title,
             'document_type' => $this->resolveDocumentType($request->document_category_id),
             'module' => $request->module,
@@ -114,6 +120,8 @@ class DocumentController extends Controller
             'audit_cycle_id' => $request->audit_cycle_id,
             'doc_date' => $request->doc_date,
         ]);
+
+        // Dokumen baru selalu draft, tidak perlu de-aktifkan revisi lain
 
         return redirect()->route('admin.documents.index', ['module' => $request->module])
             ->with('success', 'Dokumen berhasil diunggah.');
@@ -136,7 +144,14 @@ class DocumentController extends Controller
             $units = $units->where('id', $user->unit_id);
         }
 
-        return view('admin.documents.edit', compact('document', 'module', 'programs', 'units', 'categories', 'cycles'));
+        // Riwayat perubahan dokumen ini
+        $activityLogs = \App\Models\ActivityLog::where('model_type', Document::class)
+            ->where('model_id', $document->id)
+            ->latest()
+            ->take(20)
+            ->get();
+
+        return view('admin.documents.edit', compact('document', 'module', 'programs', 'units', 'categories', 'cycles', 'activityLogs'));
     }
 
     public function update(Request $request, Document $document)
@@ -145,13 +160,22 @@ class DocumentController extends Controller
 
         $request->validate([
             'title' => 'required|string|max:255',
+            'code' => 'required|string|max:255|unique:documents,code,' . $document->id,
             'document_category_id' => 'required|exists:document_categories,id',
             'is_public' => 'boolean',
+            'version' => 'nullable|integer',
+            // status tidak dapat diubah pada edit, jadi tidak divalidasi di sini
         ]);
 
         $data = $request->except(['file']);
+        $data['version'] = $request->version;
         $data['is_public'] = $request->has('is_public');
         $data['document_type'] = $this->resolveDocumentType($request->document_category_id);
+
+        // Jika dokumen sedang aktif dan di‑edit, kembalikan ke draft agar perlu persetujuan ulang.
+        if ($document->status === 'aktif') {
+            $data['status'] = 'draft';
+        }
 
         if ($request->hasFile('file')) {
             $request->validate([
@@ -171,8 +195,27 @@ class DocumentController extends Controller
 
         $document->update($data);
 
+        $msg = 'Dokumen berhasil diperbarui.';
+        if (isset($data['status']) && $data['status'] === 'draft') {
+            $msg .= ' Status dikembalikan ke Draft karena ada perubahan pada dokumen aktif.';
+        }
+
         return redirect()->route('admin.documents.index', ['module' => $document->module])
-            ->with('success', 'Dokumen berhasil diperbarui.');
+            ->with('success', $msg);
+    }
+
+    /**
+     * Approve dokumen (pimpinan). Sets status to "aktif".
+     */
+    public function approve(Document $document)
+    {
+        $this->authorizeDocumentAccess($document, allowOwner: true);
+        // Set this document to aktif and downgrade other revisions with same code
+        $document->update(['status' => 'aktif']);
+        Document::where('code', $document->code)
+            ->where('id', '<>', $document->id)
+            ->update(['status' => 'draft']);
+        return redirect()->back()->with('success', 'Dokumen berhasil disetujui dan aktif.');
     }
 
     public function download(Document $document)

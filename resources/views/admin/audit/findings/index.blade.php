@@ -9,7 +9,7 @@
         <div class="card card-custom shadow-sm flex-fill border-0 border-top border-4 border-danger">
             <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center mb-1">
-                    <a href="{{ route('admin.audit.assignments.index') }}" class="btn btn-sm btn-light rounded-circle me-3 border"><i class="fa-solid fa-arrow-left"></i></a>
+                    <a href="{{ route('admin.audit.assignments.index') }}" class="btn btn-sm btn-light rounded-circle me-3 border icon-only-btn" aria-label="Kembali"><i class="fa-solid fa-arrow-left"></i></a>
                     <h5 class="fw-bold mb-0 text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i> Permintaan Tindakan Koreksi (PTK)</h5>
                 </div>
             </div>
@@ -118,7 +118,7 @@
                                         @hasrole('spmi|auditor|prodi|unit')
                                         <form action="{{ route('admin.audit.findings.attachments.destroy', [$f, $att]) }}" method="POST" onsubmit="return confirm('Hapus bukti?')">
                                             @csrf @method('DELETE')
-                                            <button class="btn btn-sm text-danger" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+                                            <button class="btn btn-sm text-danger icon-only-btn" title="Hapus" aria-label="Hapus"><i class="fa-solid fa-trash"></i></button>
                                         </form>
                                         @endhasrole
                                     </div>

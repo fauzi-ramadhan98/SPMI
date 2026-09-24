@@ -84,9 +84,10 @@ class SuratTugasController extends Controller
                 'margin_right' => 0,
             ]);
 
-        $safeYear = str_replace(['/', '\\'], '-', $cycle->academic_year);
+        $safeCycleName = str_replace(['/', '\\'], '-', $cycle->name);
+        $safeAcademicYear = str_replace(['/', '\\'], '-', $cycle->academic_year);
 
-        return $pdf->download('jadwal-visitasi-' . $cycle->name . '-' . $safeYear . '.pdf');
+        return $pdf->download('jadwal-visitasi-' . $safeCycleName . '-' . $safeAcademicYear . '.pdf');
     }
 
     private function kopDataUri(): ?string

@@ -8,7 +8,7 @@
         <div class="card card-custom shadow-sm border-0 border-top border-4 border-warning">
             <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
                 <div class="d-flex align-items-center">
-                    <a href="{{ route('admin.units.index') }}" class="btn btn-sm btn-light rounded-circle me-3 border"><i class="fa-solid fa-arrow-left"></i></a>
+                    <a href="{{ route('admin.units.index') }}" class="btn btn-sm btn-light rounded-circle me-3 border icon-only-btn" aria-label="Kembali"><i class="fa-solid fa-arrow-left"></i></a>
                     <div>
                         <h5 class="fw-bold mb-0">Edit Unit Kerja</h5>
                         <p class="text-muted small mb-0">Perbarui data unit: <strong>{{ $unit->name }}</strong></p>

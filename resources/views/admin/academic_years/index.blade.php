@@ -50,20 +50,16 @@
                                 </span>
                             @endif
                         </td>
-                        <td class="py-3 text-center pe-4">
-                            <div class="btn-group shadow-sm border rounded p-1 btn-group-sm">
-                                <a href="{{ route('admin.academic_years.edit', $year->id) }}" class="btn btn-light text-warning border-0" title="Edit">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </a>
+                        <td class="py-3 text-center pe-4 admin-actions-cell"><div class="admin-table-actions">
+                            <div class="admin-table-action-group">
+                                <a href="{{ route('admin.academic_years.edit', $year->id) }}" class="btn btn-sm btn-outline-warning icon-only-btn admin-table-action" title="Edit" aria-label="Edit"><i aria-hidden="true" class="fa-solid fa-pen-to-square"></i></a>
                                 <form action="{{ route('admin.academic_years.destroy', $year->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus tahun akademik ini?');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-light text-danger border-0" title="Hapus">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger icon-only-btn admin-table-action" title="Hapus" aria-label="Hapus"><i aria-hidden="true" class="fa-solid fa-trash"></i></button>
                                 </form>
                             </div>
-                        </td>
+                        </div></td>
                     </tr>
                     @empty
                     <tr>

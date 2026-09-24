@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Document;
 use App\Models\ChecklistItem;
 use App\Models\QualityStandard;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ChecklistItemController extends Controller
 {
     public function index()
     {
-        $standards = QualityStandard::with('checklistItems')
+        $standards = QualityStandard::with(['checklistItems', 'document.decree'])
             ->orderBy('kode_standar')
             ->orderBy('created_at', 'desc')
             ->paginate(20);
@@ -27,10 +29,24 @@ class ChecklistItemController extends Controller
                 $indicators[] = ['key' => 'IKT ' . ($i + 1), 'text' => $r['text'], 'target' => $r['target'] ?? ''];
             }
 
-            return ['id' => $std->id, 'indicators' => $indicators];
+            return [
+                'id'                => $std->id,
+                'document_id'       => $std->document_id,
+                'kode_standar'      => $std->kode_standar ?: '—',
+                'pernyataan_standar'=> $std->pernyataan_standar ?: '',
+                'name'              => $std->name ?: '',
+                'indicators'        => $indicators,
+            ];
         })->values();
 
-        return view('admin.checklist_items.index', compact('standards', 'standardOptions', 'standardIndicators'));
+        // Hanya document dokumen_mutu yang aktif
+        $documents = Document::where('module', 'dokumen_mutu')
+            ->where('status', 'aktif')
+            ->with('decree')
+            ->orderBy('code')
+            ->get();
+
+        return view('admin.checklist_items.index', compact('standards', 'standardOptions', 'standardIndicators', 'documents'));
     }
 
     public function store(Request $request)

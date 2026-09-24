@@ -29,7 +29,7 @@
                     <th>Jenis</th>
                     <th>Periode</th>
                     <th>Status</th>
-                    <th class="text-end">Aksi</th>
+                    <th class="text-center">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -44,27 +44,23 @@
                                 {{ $evaluation->status === 'draft' ? 'Draft' : ucfirst($evaluation->status) }}
                             </span>
                         </td>
-                        <td class="text-end">
-                            <a href="{{ route('admin.evaluations.show', $evaluation) }}" class="btn btn-sm btn-outline-primary" title="Lihat">
-                                <i class="fa-solid fa-eye"></i>
-                            </a>
+                        <td class="text-center admin-actions-cell"><div class="admin-table-actions">
+                            <a href="{{ route('admin.evaluations.show', $evaluation) }}" class="btn btn-sm btn-outline-primary icon-only-btn admin-table-action" title="Lihat" aria-label="Lihat"><i aria-hidden="true" class="fa-solid fa-eye"></i></a>
                             {{-- Prodi/Unit pemilik atau administrator bisa isi/kelola (SPMI monitoring read-only) --}}
                             @if (!auth()->user()->hasRole('spmi') && (auth()->user()->hasAnyRole(['administrator'])
                                 || ($evaluation->evaluable_type === App\Models\AcademicProgram::class && auth()->user()->hasRole('prodi') && $evaluation->evaluable_id === auth()->user()->academic_program_id)
                                 || ($evaluation->evaluable_type === App\Models\Unit::class && auth()->user()->hasRole('unit') && $evaluation->evaluable_id === auth()->user()->unit_id)))
-                            <a href="{{ route('admin.evaluations.edit', $evaluation) }}" class="btn btn-sm btn-outline-secondary" title="Isi / Kelola">
-                                <i class="fa-solid fa-pen"></i>
-                            </a>
+                            <a href="{{ route('admin.evaluations.edit', $evaluation) }}" class="btn btn-sm btn-outline-warning icon-only-btn admin-table-action" title="Isi / Kelola" aria-label="Isi / Kelola"><i aria-hidden="true" class="fa-solid fa-pen-to-square"></i></a>
                             @endif
                             @if (auth()->user()->hasAnyRole(['administrator'])
     || (($evaluation->evaluable_type === App\Models\AcademicProgram::class && auth()->user()->hasRole('prodi') && $evaluation->evaluable_id === auth()->user()->academic_program_id
         || $evaluation->evaluable_type === App\Models\Unit::class && auth()->user()->hasRole('unit') && $evaluation->evaluable_id === auth()->user()->unit_id) && $evaluation->status === 'draft'))
                             <form action="{{ route('admin.evaluations.destroy', $evaluation) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus evaluasi ini?')">
                                 @csrf @method('DELETE')
-                                <button class="btn btn-sm btn-outline-danger" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+                                <button class="btn btn-sm btn-outline-danger icon-only-btn admin-table-action" title="Hapus" aria-label="Hapus"><i aria-hidden="true" class="fa-solid fa-trash"></i></button>
                             </form>
                             @endif
-                        </td>
+                        </div></td>
                     </tr>
                 @empty
                     <tr><td colspan="6" class="text-center text-muted">Belum ada evaluasi diri.</td></tr>

@@ -21,18 +21,44 @@ class AuditInstrumentController extends Controller
 
         $instruments = $assignment->instruments;
 
-        // Ambil Risk Register auditee (prodi ATAU unit), hanya level High sebagai prioritas
+        // Ambil Risk Register auditee (prodi ATAU unit), hanya level High sebagai prioritas untuk panel atas
         $risks = $this->auditeeRisks($assignment)->where('risk_level', 'High')->sortByDesc('risk_score')->values();
-
-        // Evaluasi Diri auditee untuk dibandingkan auditor (read-only)
+        // Semua risiko untuk mapping Level per indikator
+        $allRisks = $this->auditeeRisks($assignment);
         $evaluation = $this->auditeeEvaluation($assignment);
-        $edItems = $evaluation ? $evaluation->items()->with('attachments')->get() : collect();
+        $edItems = $evaluation ? $evaluation->items()->with(['attachments','checklistItem','standard'])->get() : collect();
         $edByIndicator = collect();
+        $normalize = function($t){
+            $t = trim((string)$t);
+            $t = preg_replace('/^\s*\[[^\]]+\]\s*/', '', $t);
+            $t = preg_replace('/^\s*(IKU|IKT)\s*\d+\s*[:\.]\s*/i', '', $t);
+            $t = preg_replace('/^\s*\d+\.\s*/', '', $t);
+            $t = preg_replace('/\s*\(Target:.*$/i', '', $t);
+            $t = str_replace('●', '', $t);
+            return mb_strtolower(trim($t));
+        };
         foreach ($edItems as $it) {
-            $edByIndicator[mb_strtolower(trim($it->indicator))] = $it;
+            $key = $normalize($it->indicator);
+            if ($key !== '') $edByIndicator[$key] = $it;
+            // fallback simpan juga key mentah untuk kompatibilitas
+            $rawKey = mb_strtolower(trim($it->indicator));
+            if (!isset($edByIndicator[$rawKey])) $edByIndicator[$rawKey] = $it;
         }
+        // Mapping Level Risiko per indikator (dari RiskRegister, diambil risk_level)
+        $riskByIndicator = collect();
+        foreach ($allRisks as $risk) {
+            $key = $normalize($risk->butir_tilik);
+            if ($key !== '' && !isset($riskByIndicator[$key])) $riskByIndicator[$key] = $risk;
+            $rawKey = mb_strtolower(trim($risk->butir_tilik));
+            if ($rawKey !== '' && !isset($riskByIndicator[$rawKey])) $riskByIndicator[$rawKey] = $risk;
+            // fallback kombinasi standar+butir untuk presisi
+            $stdKey = mb_strtolower(trim($risk->standar_mutu ?? '')) . '|' . $key;
+            if ($stdKey !== '|' && !isset($riskByIndicator[$stdKey])) $riskByIndicator[$stdKey] = $risk;
+        }
+        // Simpan closure normalisasi untuk dipakai di view (via share)
+        view()->share('normalizeIndicator', $normalize);
 
-        return view('admin.audit.instruments.index', compact('assignment', 'instruments', 'risks', 'edByIndicator'));
+        return view('admin.audit.instruments.index', compact('assignment', 'instruments', 'risks', 'edByIndicator', 'evaluation', 'riskByIndicator'));
     }
 
     public function store(Request $request, AuditAssignment $assignment)
