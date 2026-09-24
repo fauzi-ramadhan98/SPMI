@@ -56,6 +56,7 @@
                 </div>
             </div>
 
+            @if($decree->jenis === 'auditor')
             <h6 class="mt-4 fw-bold text-primary">Lampiran — Daftar Nama Tim Auditor (dari Siklus AMI)</h6>
             @if($decree->cycle)
                 <p class="small text-muted mb-2">
@@ -84,6 +85,39 @@
                     </tbody>
                 </table>
             </div>
+            @endif
+
+            <h6 class="mt-4 fw-bold text-primary">Dokumen Mutu Terkait</h6>
+            @php
+                $decree->load('documents');
+            @endphp
+            @if($decree->documents->count() > 0)
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered">
+                    <thead class="bg-light">
+                        <tr><th>NO</th><th>KODE</th><th>JUDUL</th><th>STATUS</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach($decree->documents as $i => $doc)
+                        <tr>
+                            <td>{{ $i + 1 }}</td>
+                            <td>{{ $doc->code }}</td>
+                            <td>{{ $doc->title }}</td>
+                            <td>
+                                @if($doc->status === 'draft')
+                                    <span class="badge bg-secondary">Draft</span>
+                                @else
+                                    <span class="badge bg-success">Aktif</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @else
+                <p class="text-muted mb-3">Belum ada Dokumen Mutu terkait.</p>
+            @endif
 
             <div class="d-flex gap-2 mt-4">
                 <button class="btn btn-primary btn-custom"><i class="fa-solid fa-floppy-disk me-1"></i>Simpan Koreksi</button>
@@ -95,7 +129,39 @@
                     @csrf
                     <button class="btn btn-success btn-custom"><i class="fa-solid fa-stamp me-1"></i>Tandatangani & Tetapkan</button>
                 </form>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                    <i class="fa-solid fa-times me-1"></i>Tolak & Kembalikan
+                </button>
                 <a href="{{ route('admin.standard-decrees.index') }}" class="btn btn-outline-secondary">Batal</a>
+            </div>
+
+            {{-- Reject Modal --}}
+            <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <form action="{{ route('admin.standard-decrees.reject', $decree) }}" method="POST">
+                        @csrf
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title"><i class="fa-solid fa-times-circle me-1"></i> Tolak SK</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="mb-2">Anda akan menolak SK berikut dan mengembalikannya ke SPMI untuk diperbaiki:</p>
+                                <p class="fw-bold mb-3">{{ $decree->sk_no }} — {{ $decree->judul }}</p>
+                                <div class="mb-3">
+                                    <label class="form-label">Alasan Penolakan <span class="text-danger">*</span></label>
+                                    <textarea name="reject_reason" class="form-control" rows="4" required maxlength="1000"
+                                              placeholder="Tuliskan alasan penolakan, misalnya: data dokumen belum lengkap, judul SK perlu perubahan, dll."></textarea>
+                                    <div class="form-text">Wajib diisi. Catatan ini akan terlihat oleh SPMI.</div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                                <button class="btn btn-danger" type="submit"><i class="fa-solid fa-times me-1"></i>Tolak & Kembalikan</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
         </form>
     </div>

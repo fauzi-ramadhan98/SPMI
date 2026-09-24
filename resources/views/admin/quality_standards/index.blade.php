@@ -10,18 +10,15 @@
     </div>
     <div class="d-flex gap-2 flex-wrap justify-content-end">
         {{-- Download Template --}}
-        <div class="dropdown">
-            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                <i class="fa-solid fa-download me-1"></i> Download Template
-            </button>
-            <ul class="dropdown-menu shadow-sm border-0">
-                <li>
-                    <a class="dropdown-item" href="{{ route('admin.quality-standards.download-template', ['format' => 'xlsx']) }}">
-                        <i class="fa-regular fa-file-excel me-2 text-success"></i> Template Excel (.xlsx)
-                    </a>
-                </li>
-            </ul>
-        </div>
+        <a class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm" href="{{ route('admin.quality-standards.download-template', ['format' => 'xlsx']) }}" title="Download template Excel untuk import bulk standar mutu">
+            <i class="fa-solid fa-download me-1"></i> Download Template
+        </a>
+        {{-- Import dari Excel --}}
+        @hasrole('spmi')
+        <button class="btn btn-outline-success btn-sm rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalImportExcel">
+            <i class="fa-solid fa-file-import me-1"></i> Import Excel
+        </button>
+        @endhasrole
         {{-- Tambah Standar --}}
         @hasrole('spmi')
         <button class="btn btn-primary btn-sm px-3 shadow-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#modalTambahStandar">
@@ -30,50 +27,6 @@
         @endhasrole
     </div>
 </div>
-
-{{-- Alert --}}
-@if(session('success'))
-<div class="alert alert-success alert-dismissible fade show mb-4 rounded-3 shadow-sm border-0" role="alert">
-    <i class="fa-solid fa-circle-check me-2"></i>{{ session('success') }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-@endif
-@if(session('error'))
-<div class="alert alert-danger alert-dismissible fade show mb-4 rounded-3 shadow-sm border-0" role="alert">
-    <i class="fa-solid fa-circle-exclamation me-2"></i>{{ session('error') }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-@endif
-
-{{-- Upload Standar Card --}}
-@hasrole('spmi')
-<div class="card shadow-sm border-0 rounded-4 mb-4" style="border-top: 4px solid #0d6efd!important;">
-    <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4 d-flex align-items-center gap-2">
-        <i class="fa-solid fa-upload text-primary"></i>
-        <span class="fw-semibold">Upload Dokumen Standar</span>
-        <span class="text-muted small ms-1">(PDF, Word, Excel — maks. 10 MB)</span>
-    </div>
-    <div class="card-body px-4 pb-4">
-        <form action="{{ route('admin.quality-standards.store') }}" method="POST" enctype="multipart/form-data" id="formUploadStandar">
-            @csrf
-            <input type="hidden" name="type" value="IKU">
-            <input type="hidden" name="pernyataan_standar" value="-">
-            <div class="d-flex align-items-end gap-3 flex-wrap">
-                <div class="flex-grow-1" style="max-width: 480px;">
-                    <input type="file" name="file" id="fileUpload" class="form-control @error('file') is-invalid @enderror"
-                        accept=".pdf,.doc,.docx,.xls,.xlsx">
-                    @error('file')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">
-                        <i class="fa-solid fa-cloud-arrow-up me-2"></i>Simpan Standar
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
-@endhasrole
 
 {{-- Table --}}
 <div class="card shadow-sm border-0 rounded-4">
@@ -91,8 +44,8 @@
                         <th class="py-3" style="width:20%">Pernyataan Standar</th>
                         <th class="py-3" style="width:10%">Rujukan</th>
                         <th class="py-3" style="width:24%">Indikator</th>
+                        <th class="py-3 text-center" style="width:12%">Apabilitas</th>
                         <th class="py-3 text-center" style="width:7%">Dokumen</th>
-                        <th class="py-3 text-center" style="width:5%">Status</th>
                         <th class="py-3 text-center pe-4" style="width:10%">Aksi</th>
                     </tr>
                 </thead>
@@ -103,7 +56,7 @@
                             <span class="badge bg-secondary bg-opacity-10 text-secondary fw-bold">{{ $std->kode_standar ?: '-' }}</span>
                         </td>
                         <td class="py-3">
-                            <div class="fw-bold text-dark">{{ $std->name }}</div>
+                            <div class="fw-bold text-dark">{{ $std->name ?: ($std->document->title ?? '-') }}</div>
                             @if($std->decree)
                                 @hasrole('spmi|pimpinan|administrator')
                                 <a href="{{ route('admin.standard-decrees.index') }}" class="badge bg-dark bg-opacity-75 text-white text-decoration-none mt-1" style="font-size:10px;" title="Lihat halaman SK Penetapan">
@@ -144,6 +97,23 @@
                             @endif
                         </td>
                         <td class="py-3 text-center">
+                            @if($std->applicabilities->isEmpty())
+                                <span class="badge bg-success rounded-pill px-2 py-1"><i class="fa-solid fa-globe me-1"></i>Semua</span>
+                            @else
+                                @foreach($std->applicabilities as $app)
+                                    @if($app->target_type === 'prodi' && $app->academicProgram)
+                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-2 px-2 py-1 me-1 mb-1 d-inline-block">
+                                            <i class="fa-solid fa-graduation-cap me-1"></i>{{ $app->academicProgram->degree_level }} {{ \Illuminate\Support\Str::limit($app->academicProgram->name, 12) }}
+                                        </span>
+                                    @elseif($app->target_type === 'unit' && $app->unit)
+                                        <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 rounded-2 px-2 py-1 me-1 mb-1 d-inline-block">
+                                            <i class="fa-solid fa-building me-1"></i>{{ \Illuminate\Support\Str::limit($app->unit->name, 12) }}
+                                        </span>
+                                    @endif
+                                @endforeach
+                            @endif
+                        </td>
+                        <td class="py-3 text-center">
                             @if($std->file_path)
                                 @if($std->file_type == 'link')
                                     <a href="{{ $std->file_path }}" target="_blank" rel="noopener noreferrer"
@@ -169,31 +139,20 @@
                                 <span class="text-muted small">—</span>
                             @endif
                         </td>
-                        <td class="py-3 text-center">
-                            @if($std->is_active)
-                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2 py-1" style="font-size:10px;">Aktif</span>
-                            @else
-                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-2 py-1" style="font-size:10px;">Nonaktif</span>
-                            @endif
-                        </td>
-                        <td class="py-3 text-center pe-4">
+                        <td class="py-3 text-center pe-4 admin-actions-cell"><div class="admin-table-actions">
                             @hasrole('spmi')
                             <a href="{{ route('admin.quality-standards.edit', $std->id) }}"
-                               class="btn btn-sm btn-outline-warning rounded-pill px-2 py-1 shadow-sm me-1"
-                               title="Edit" style="font-size:12px;">
-                                ✏️ Edit
-                            </a>
+                               class="btn btn-sm btn-outline-warning icon-only-btn admin-table-action"
+                               title="Edit" style="font-size:12px;" aria-label="Edit"><i aria-hidden="true" class="fa-solid fa-pen-to-square"></i></a>
                             <form action="{{ route('admin.quality-standards.destroy', $std->id) }}" method="POST"
                                   class="d-inline" onsubmit="return confirm('Hapus standar ini?')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1 shadow-sm"
-                                        title="Hapus" style="font-size:12px;">
-                                    🗑️ Hapus
-                                </button>
+                                <button type="submit" class="btn btn-sm btn-outline-danger icon-only-btn admin-table-action"
+                                        title="Hapus" style="font-size:12px;" aria-label="Hapus"><i aria-hidden="true" class="fa-solid fa-trash"></i></button>
                             </form>
                             @endhasrole
-                        </td>
+                        </div></td>
                     </tr>
                     @empty
                     <tr>
@@ -229,13 +188,17 @@
                 <form action="{{ route('admin.quality-standards.store') }}" method="POST" enctype="multipart/form-data" id="formModalStandar">
                     @csrf
                     <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold small">Kode Standar</label>
-                            <input type="text" name="kode_standar" class="form-control" placeholder="misal: S.01">
-                        </div>
-                        <div class="col-md-8">
-                            <label class="form-label fw-bold small">Nama Standar <span class="text-danger">*</span></label>
-                            <input type="text" name="name" class="form-control" placeholder="misal: Standar Pendidikan" required>
+                        <div class="col-12">
+                            <label class="form-label fw-bold small">Standar Mutu <span class="text-danger">*</span></label>
+                            <select name="document_id" class="form-select" required>
+                                <option value="" disabled selected>Pilih Standar Mutu...</option>
+                                @foreach(\App\Models\Document::where('module','dokumen_mutu')->where('status','aktif')->with('decree')->orderBy('code')->get() as $doc)
+                                    <option value="{{ $doc->id }}">
+                                        {{ $doc->code }} — {{ $doc->title }} @if($doc->decree) (SK: {{ $doc->decree->sk_no }}) @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="form-text">Pilih Standar Mutu (Dokumen Mutu) yang sudah Aktif.</div>
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-bold small">Pernyataan Standar <span class="text-danger">*</span></label>
@@ -304,6 +267,66 @@
         </div>
     </div>
 </div>
+
+{{-- Modal Import Excel --}}
+<div class="modal fade" id="modalImportExcel" tabindex="-1" aria-labelledby="modalImportExcelLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0 px-4 pt-4">
+                <h5 class="modal-title fw-bold" id="modalImportExcelLabel">
+                    <i class="fa-solid fa-file-import me-2 text-success"></i>Import Standar dari Excel
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4">
+                <div class="alert alert-info border-0 rounded-3 mb-3 py-2 px-3" style="background-color: #e8f4fd;">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="fa-solid fa-circle-info text-info mt-1"></i>
+                        <div class="small">
+                            <strong>Cara menggunakan:</strong>
+                            <ol class="mb-0 mt-1 ps-3">
+                                <li><strong>Pilih Standar Mutu (Document)</strong> yang akan ditautkan.</li>
+                                <li>Klik <strong>"Download Template"</strong> di atas untuk mendapatkan file template Excel.</li>
+                                <li>Isi data standar mutu (kode, nama, pernyataan, IKU/IKT, target) di template.</li>
+                                <li>Upload file yang sudah diisi di form di bawah ini, lalu klik <strong>"Import Sekarang"</strong>.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                <form action="{{ route('admin.quality-standards.store') }}" method="POST" enctype="multipart/form-data" id="formImportExcel">
+                    @csrf
+                    <input type="hidden" name="type" value="IKU">
+                    <input type="hidden" name="pernyataan_standar" value="-">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Standar Mutu (Document) <span class="text-danger">*</span></label>
+                        <select name="document_id" class="form-select" required id="docIdImportExcel">
+                            <option value="" disabled selected>Pilih Standar Mutu (Document)...</option>
+                            @foreach(\App\Models\Document::where('module','dokumen_mutu')->where('status','aktif')->with('decree')->orderBy('code')->get() as $doc)
+                                <option value="{{ $doc->id }}">
+                                    {{ $doc->code }} — {{ $doc->title }} @if($doc->decree) (SK: {{ $doc->decree->sk_no }}) @endif
+                                </option>
+                            @endforeach
+                        </select>
+                        <div class="form-text">Semua standar dalam file Excel akan ditautkan ke Document Mutu ini.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Pilih File Template (.xlsx / .csv) <span class="text-danger">*</span></label>
+                        <input type="file" name="file" class="form-control @error('file') is-invalid @enderror"
+                            accept=".xlsx,.csv" required id="fileImportExcel">
+                        @error('file')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="form-text">Format: Excel (.xlsx) atau CSV — maks. 10 MB</div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success rounded-pill px-4 shadow-sm" id="btnSubmitImport">
+                            <i class="fa-solid fa-file-import me-2"></i>Import Sekarang
+                        </button>
+                        <button type="button" class="btn btn-light border rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -312,8 +335,8 @@
         const badgeClass = kind === 'iku' ? 'bg-primary' : 'bg-success';
         const isIku = kind === 'iku';
         const removeBtn = isIku
-            ? '<button type="button" class="btn btn-outline-danger btn-sm remove-iku-row" title="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>'
-            : '<button type="button" class="btn btn-outline-danger btn-sm remove-ikt-row" title="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>';
+            ? '<button type="button" class="btn btn-outline-danger btn-sm remove-iku-row icon-only-btn" title="Hapus baris ini" aria-label="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>'
+            : '<button type="button" class="btn btn-outline-danger btn-sm remove-ikt-row icon-only-btn" title="Hapus baris ini" aria-label="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>';
         return `
             <div class="indicator-row row g-2 align-items-center mb-2">
                 <div class="col-md-1">
@@ -377,6 +400,18 @@
     document.addEventListener('DOMContentLoaded', function () {
         initIndicatorArea('iku', 'ikuContainerModal', 'btnAddIkuModal', 'IKU');
         initIndicatorArea('ikt', 'iktContainerModal', 'btnAddIktModal', 'IKT');
+
+        // Loading state untuk form Import Excel
+        const formImport = document.getElementById('formImportExcel');
+        if (formImport) {
+            formImport.addEventListener('submit', function () {
+                const btn = document.getElementById('btnSubmitImport');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Memproses...';
+                }
+            });
+        }
     });
 </script>
 @endpush

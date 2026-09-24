@@ -32,7 +32,7 @@
                         <th>Siklus / Auditor</th>
                         <th>Status</th>
                         <th>Ditetapkan</th>
-                        <th class="text-end">Aksi</th>
+                        <th class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -63,25 +63,21 @@
                                 <span class="text-muted">Belum</span>
                             @endif
                         </td>
-                        <td class="text-end text-nowrap">
-                            <a href="{{ route('admin.standard-decrees.pdf', $d) }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                <i class="fa-solid fa-file-pdf me-1"></i>PDF
-                            </a>
+                        <td class="text-center text-nowrap admin-actions-cell"><div class="admin-table-actions">
+                            <a href="{{ route('admin.standard-decrees.pdf', $d) }}" target="_blank" class="btn btn-sm btn-outline-info icon-only-btn admin-table-action" title="PDF" aria-label="PDF"><i aria-hidden="true" class="fa-solid fa-file-pdf"></i></a>
                             @if($d->file_path)
-                            <a href="{{ route('admin.standard-decrees.download-file', $d) }}" class="btn btn-sm btn-outline-info">
-                                <i class="fa-solid fa-download"></i> SK
-                            </a>
+                            <a href="{{ route('admin.standard-decrees.download-file', $d) }}" class="btn btn-sm btn-outline-info icon-only-btn admin-table-action" title="SK" aria-label="SK"><i aria-hidden="true" class="fa-solid fa-download"></i></a>
                             @endif
                             @if(!$d->isDitetapkan())
                                 @hasrole('pimpinan')
                                 <form action="{{ route('admin.standard-decrees.verify', $d) }}" method="POST" class="d-inline"
                                       onsubmit="return confirm('Tetapkan SK ini? Status akan menjadi Ditetapkan dan ditandatangani secara otomatis.')">
                                     @csrf
-                                    <button class="btn btn-sm btn-success btn-custom"><i class="fa-solid fa-check me-1"></i>Tetapkan</button>
+                                    <button class="btn btn-sm btn-outline-success icon-only-btn admin-table-action btn-custom" title="Tetapkan" aria-label="Tetapkan"><i aria-hidden="true" class="fa-solid fa-check"></i></button>
                                 </form>
                                 @endhasrole
                             @endif
-                        </td>
+                        </div></td>
                     </tr>
                     @empty
                     <tr><td colspan="6" class="text-center text-muted py-4">Belum ada SK Penugasan Auditor.</td></tr>

@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="d-flex align-items-center gap-2 mb-4">
-    <a href="{{ route('admin.quality-standards.index') }}" class="btn btn-light border rounded-pill btn-sm px-3">
+    <a href="{{ request()->query('dari') === 'revisi' ? route('admin.revisi-standar.index') : route('admin.quality-standards.index') }}" class="btn btn-light border rounded-pill btn-sm px-3">
         <i class="fa-solid fa-arrow-left me-1"></i> Kembali
     </a>
     <h5 class="mb-0 fw-bold"><i class="fa-solid fa-pen-to-square me-2 text-warning"></i>Edit Standar Mutu</h5>
@@ -12,23 +12,22 @@
 
 <div class="card shadow-sm border-0 rounded-4" style="border-top: 4px solid #ffc107!important;">
     <div class="card-body p-4">
-        <form action="{{ route('admin.quality-standards.update', $qualityStandard->id) }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('admin.quality-standards.update', $qualityStandard->id) }}{{ request()->query('dari') ? '?dari=' . urlencode(request()->query('dari')) : '' }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
             <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">Kode Standar</label>
-                    <input type="text" name="kode_standar" class="form-control @error('kode_standar') is-invalid @enderror"
-                        placeholder="misal: S.01" value="{{ old('kode_standar', $qualityStandard->kode_standar) }}">
-                    @error('kode_standar')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-
-                <div class="col-md-8">
-                    <label class="form-label fw-bold">Nama Standar <span class="text-danger">*</span></label>
-                    <input type="text" name="name" class="form-control @error('name') is-invalid @enderror"
-                        placeholder="misal: Standar Pendidikan" value="{{ old('name', $qualityStandard->name) }}" required>
-                    @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <div class="col-12">
+                    <label class="form-label fw-bold">Standar Mutu <span class="text-danger">*</span></label>
+                    <select name="document_id" class="form-select @error('document_id') is-invalid @enderror" required>
+                        <option value="" disabled>Pilih Standar Mutu...</option>
+                        @foreach($documents as $doc)
+                            <option value="{{ $doc->id }}" {{ old('document_id', $qualityStandard->document_id) == $doc->id ? 'selected' : '' }}>
+                                {{ $doc->code }} — {{ $doc->title }} @if($doc->decree) (SK: {{ $doc->decree->sk_no }}) @endif
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('document_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
                 <div class="col-12">
@@ -36,6 +35,20 @@
                     <textarea name="pernyataan_standar" class="form-control @error('pernyataan_standar') is-invalid @enderror"
                         rows="4" placeholder="Tuliskan pernyataan standar mutu secara lengkap..." required>{{ old('pernyataan_standar', $qualityStandard->pernyataan_standar ?: $qualityStandard->name) }}</textarea>
                     @error('pernyataan_standar')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Status</label>
+                    <div class="form-check form-switch mt-1">
+                        <input class="form-check-input" type="checkbox" name="is_active" value="1" id="is_active_edit"
+                            {{ old('is_active', $qualityStandard->is_active) ? 'checked' : '' }}>
+                        <label class="form-check-label fw-semibold" for="is_active_edit">
+                            <span id="statusLabelEdit" class="{{ $qualityStandard->is_active ? 'text-success' : 'text-secondary' }}">
+                                {{ $qualityStandard->is_active ? 'Aktif' : 'Nonaktif' }}
+                            </span>
+                        </label>
+                    </div>
+                    <div class="form-text">Aktifkan/Nonaktifkan standar mutu ini.</div>
                 </div>
 
                 {{-- Blok A: Indikator Kinerja Utama (IKU) --}}
@@ -60,8 +73,8 @@
                                         placeholder="Target, misal: ≥ 3.00" value="{{ old("iku.$i.target", $row['target'] ?? '') }}">
                                 </div>
                                 <div class="col-md-2 text-end">
-                                    <button type="button" class="btn btn-outline-danger btn-sm remove-iku-row {{ $loop->first ? 'd-none' : '' }}"
-                                        title="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-iku-row {{ $loop->first ? 'd-none' : '' }} icon-only-btn"
+                                        title="Hapus baris ini" aria-label="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
                             </div>
                             @endforeach
@@ -94,8 +107,8 @@
                                         placeholder="Target, misal: ≥ 3.00" value="{{ old("ikt.$i.target", $row['target'] ?? '') }}">
                                 </div>
                                 <div class="col-md-2 text-end">
-                                    <button type="button" class="btn btn-outline-danger btn-sm remove-ikt-row"
-                                        title="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-ikt-row icon-only-btn"
+                                        title="Hapus baris ini" aria-label="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
                             </div>
                             @endforeach
@@ -155,13 +168,51 @@
                     @error('file')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
+                {{-- Apabilitas Standar (Target Audiens) --}}
                 <div class="col-12">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1"
-                            {{ old('is_active', $qualityStandard->is_active) ? 'checked' : '' }}>
-                        <label class="form-check-label ms-1" for="is_active">Aktifkan Standar Mutu Ini</label>
+                    <div class="border rounded-3 p-3 bg-light">
+                        <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-sitemap me-2"></i>Apabilitas Standar (Target Audiens)</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="applicability_mode" value="all" id="mode_all" {{ $qualityStandard->applicabilities->isEmpty() ? 'checked' : '' }}>
+                            <label class="form-check-label" for="mode_all"><strong>Semua Prodi & Unit</strong> (Default)</label>
+                            <div class="form-text ms-4">Standar ini berlaku untuk seluruh Program Studi dan Unit Kerja.</div>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="applicability_mode" value="custom" id="mode_custom" {{ $qualityStandard->applicabilities->isNotEmpty() ? 'checked' : '' }}>
+                            <label class="form-check-label"><strong>Terbatas pada Prodi/Unit Tertentu</strong></label>
+                        </div>
+                        <div id="custom_applicability" class="ms-4 mt-2" style="display: {{ $qualityStandard->applicabilities->isEmpty() ? 'none' : 'block' }};">
+                            <h6 class="fw-bold text-secondary mb-2">Pilih Prodi/Unit yang Berlaku:</h6>
+                            <div class="row mb-3">
+                                <label class="col-md-2 col-form-label fw-bold">Program Studi</label>
+                                <div class="col-md-10">
+                                    @php $mappedProgramIds = $qualityStandard->applicabilities->where('target_type','prodi')->pluck('academic_program_id')->toArray(); @endphp
+                                    @foreach($programs as $prog)
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="selected_programs[]" value="{{ $prog->id }}" id="prog-{{ $prog->id }}" {{ in_array($prog->id, $mappedProgramIds) ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="prog-{{ $prog->id }}">{{ $prog->degree_level }} {{ $prog->name }}</label>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <label class="col-md-2 col-form-label fw-bold">Unit Kerja</label>
+                                <div class="col-md-10">
+                                    @php $mappedUnitIds = $qualityStandard->applicabilities->where('target_type','unit')->pluck('unit_id')->toArray(); @endphp
+                                    @foreach($units as $unit)
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="selected_units[]" value="{{ $unit->id }}" id="unit-{{ $unit->id }}" {{ in_array($unit->id, $mappedUnitIds) ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="unit-{{ $unit->id }}">{{ $unit->name }} ({{ $unit->category_label }})</label>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <div class="col-12">
+                    <div class="form-check form-switch">
             </div>
 
             <hr class="mt-4">
@@ -238,8 +289,8 @@
         const badgeClass = kind === 'iku' ? 'bg-primary' : 'bg-success';
         const isIku = kind === 'iku';
         const removeBtn = isIku
-            ? '<button type="button" class="btn btn-outline-danger btn-sm remove-iku-row" title="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>'
-            : '<button type="button" class="btn btn-outline-danger btn-sm remove-ikt-row" title="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>';
+            ? '<button type="button" class="btn btn-outline-danger btn-sm remove-iku-row icon-only-btn" title="Hapus baris ini" aria-label="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>'
+            : '<button type="button" class="btn btn-outline-danger btn-sm remove-ikt-row icon-only-btn" title="Hapus baris ini" aria-label="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>';
         return `
             <div class="indicator-row row g-2 align-items-center mb-2">
                 <div class="col-md-1">
@@ -276,6 +327,23 @@
     document.addEventListener('DOMContentLoaded', function () {
         const ikuC = document.getElementById('ikuContainer');
         const iktC = document.getElementById('iktContainer');
+
+        // Toggle status label
+        const isActiveEdit = document.getElementById('is_active_edit');
+        const statusLabelEdit = document.getElementById('statusLabelEdit');
+        if (isActiveEdit && statusLabelEdit) {
+            isActiveEdit.addEventListener('change', function () {
+                statusLabelEdit.textContent = this.checked ? 'Aktif' : 'Nonaktif';
+                statusLabelEdit.className = this.checked ? 'text-success' : 'text-secondary';
+            });
+        }
+
+        // Toggle custom applicability section
+        document.querySelectorAll('input[name="applicability_mode"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                document.getElementById('custom_applicability').style.display = this.value === 'custom' ? 'block' : 'none';
+            });
+        });
 
         document.getElementById('btnAddIku').addEventListener('click', function () {
             const idx = ikuC.querySelectorAll('.indicator-row').length;

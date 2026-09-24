@@ -77,7 +77,7 @@ class StandardDecreeTest extends TestCase
 
         $decree = StandardDecree::where('sk_no', 'SK.05/KMI/2026')->first();
         $this->assertNotNull($decree);
-        $this->assertEquals('draft', $decree->status);
+        $this->assertEquals('menunggu_persetujuan', $decree->status);
         $this->assertEquals($spmi->id, $decree->prepared_by);
         $this->assertEquals('images/kopstmik.jpg', $decree->kop_path);
         $this->assertEquals('images/TTD-KETUA.jpg', $decree->signature_path);

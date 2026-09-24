@@ -15,18 +15,18 @@
         <form action="{{ route('admin.quality-standards.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">Kode Standar</label>
-                    <input type="text" name="kode_standar" class="form-control @error('kode_standar') is-invalid @enderror"
-                        placeholder="misal: S.01" value="{{ old('kode_standar') }}">
-                    @error('kode_standar')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-
-                <div class="col-md-8">
-                    <label class="form-label fw-bold">Nama Standar <span class="text-danger">*</span></label>
-                    <input type="text" name="name" class="form-control @error('name') is-invalid @enderror"
-                        placeholder="misal: Standar Pendidikan" value="{{ old('name') }}" required>
-                    @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <div class="col-12">
+                    <label class="form-label fw-bold">Standar Mutu <span class="text-danger">*</span></label>
+                    <select name="document_id" class="form-select @error('document_id') is-invalid @enderror" required>
+                        <option value="" disabled selected>Pilih Standar Mutu...</option>
+                        @foreach($documents as $doc)
+                            <option value="{{ $doc->id }}" {{ old('document_id') == $doc->id ? 'selected' : '' }}>
+                                {{ $doc->code }} — {{ $doc->title }} @if($doc->decree) (SK: {{ $doc->decree->sk_no }}) @endif
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('document_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div class="form-text">Pilih Standar Mutu (Dokumen Mutu) yang sudah Aktif (sudah di-SK-kan).</div>
                 </div>
 
                 <div class="col-12">
@@ -62,8 +62,8 @@
                                             placeholder="Target, misal: ≥ 3.00" value="{{ old("iku.$i.target", $row['target'] ?? '') }}">
                                     </div>
                                     <div class="col-md-2 text-end">
-                                        <button type="button" class="btn btn-outline-danger btn-sm remove-iku-row {{ $loop->first ? 'd-none' : '' }}"
-                                            title="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm remove-iku-row {{ $loop->first ? 'd-none' : '' }} icon-only-btn"
+                                            title="Hapus baris ini" aria-label="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>
                                         <div class="ik-mini"></div>
                                     </div>
                                 </div>
@@ -101,8 +101,8 @@
                                             placeholder="Target, misal: ≥ 3.00" value="{{ old("ikt.$i.target", $row['target'] ?? '') }}">
                                     </div>
                                     <div class="col-md-2 text-end">
-                                        <button type="button" class="btn btn-outline-danger btn-sm remove-ikt-row"
-                                            title="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm remove-ikt-row icon-only-btn"
+                                            title="Hapus baris ini" aria-label="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>
                                     </div>
                                 </div>
                             @endforeach
@@ -134,6 +134,47 @@
                     @error('file')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
+                {{-- Apabilitas Standar (Target Audiens) --}}
+                <div class="col-12">
+                    <div class="border rounded-3 p-3 bg-light">
+                        <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-sitemap me-2"></i>Apabilitas Standar (Target Audiens)</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="applicability_mode" value="all" id="mode_all" {{ old('applicability_mode','all')==='all' ? 'checked' : '' }}>
+                            <label class="form-check-label" for="mode_all"><strong>Semua Prodi & Unit</strong> (Default)</label>
+                            <div class="form-text ms-4">Standar ini berlaku untuk seluruh Program Studi dan Unit Kerja.</div>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="applicability_mode" value="custom" id="mode_custom" {{ old('applicability_mode')==='custom' ? 'checked' : '' }}>
+                            <label class="form-check-label" for="mode_custom"><strong>Terbatas pada Prodi/Unit Tertentu</strong></label>
+                        </div>
+                        <div id="custom_applicability" class="ms-4 mt-2" style="display: {{ old('applicability_mode')==='custom' ? 'block' : 'none' }};">
+                            <h6 class="fw-bold text-secondary mb-2">Pilih Prodi/Unit yang Berlaku:</h6>
+                            <div class="row mb-3">
+                                <label class="col-md-2 col-form-label fw-bold">Program Studi</label>
+                                <div class="col-md-10">
+                                    @foreach($programs as $prog)
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="selected_programs[]" value="{{ $prog->id }}" id="prog-{{ $prog->id }}" {{ in_array($prog->id, old('selected_programs', [])) ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="prog-{{ $prog->id }}">{{ $prog->degree_level }} {{ $prog->name }}</label>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <label class="col-md-2 col-form-label fw-bold">Unit Kerja</label>
+                                <div class="col-md-10">
+                                    @foreach($units as $unit)
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="selected_units[]" value="{{ $unit->id }}" id="unit-{{ $unit->id }}" {{ in_array($unit->id, old('selected_units', [])) ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="unit-{{ $unit->id }}">{{ $unit->name }} ({{ $unit->category_label }})</label>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="col-12">
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1"
@@ -162,8 +203,8 @@
         const badgeClass = kind === 'iku' ? 'bg-primary' : 'bg-success';
         const isIku = kind === 'iku';
         const removeBtn = isIku
-            ? '<button type="button" class="btn btn-outline-danger btn-sm remove-iku-row" title="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>'
-            : '<button type="button" class="btn btn-outline-danger btn-sm remove-ikt-row" title="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>';
+            ? '<button type="button" class="btn btn-outline-danger btn-sm remove-iku-row icon-only-btn" title="Hapus baris ini" aria-label="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>'
+            : '<button type="button" class="btn btn-outline-danger btn-sm remove-ikt-row icon-only-btn" title="Hapus baris ini" aria-label="Hapus baris ini"><i class="fa-solid fa-trash-can"></i></button>';
         return `
             <div class="indicator-row row g-2 align-items-center mb-2">
                 <div class="col-md-1">
@@ -200,6 +241,13 @@
     document.addEventListener('DOMContentLoaded', function () {
         const ikuC = document.getElementById('ikuContainer');
         const iktC = document.getElementById('iktContainer');
+
+        // Toggle custom applicability section
+        document.querySelectorAll('input[name="applicability_mode"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                document.getElementById('custom_applicability').style.display = this.value === 'custom' ? 'block' : 'none';
+            });
+        });
 
         document.getElementById('btnAddIku').addEventListener('click', function () {
             const idx = ikuC.querySelectorAll('.indicator-row').length;

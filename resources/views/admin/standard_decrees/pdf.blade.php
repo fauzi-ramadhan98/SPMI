@@ -150,7 +150,8 @@
         </div>
     </div>
 
-    {{-- ===== LAMPIRAN : HALAMAN 2 — DAFTAR NAMA TIM AUDITORS ===== --}}
+    {{-- ===== LAMPIRAN : HALAMAN 2 — DAFTAR NAMA TIM AUDITORS (hanya untuk jenis auditor) ===== --}}
+    @if($decree->jenis === 'auditor' && $decree->cycle)
     <div class="lampiran">
         <table class="lamp-head">
             <tr><td class="label">Lampiran</td><td>:</td><td>Keputusan Ketua tentang Penunjukan Auditor</td></tr>
@@ -202,5 +203,6 @@
             </tr>
         </table>
     </div>
+    @endif
 </body>
 </html>

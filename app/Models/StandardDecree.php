@@ -15,6 +15,7 @@ class StandardDecree extends Model
         'sk_no',
         'judul',
         'jenis',
+        'kategori',
         'deskripsi',
         'menimbang',
         'mengingat',
@@ -33,6 +34,7 @@ class StandardDecree extends Model
         'issued_by',
         'issued_at',
         'prepared_by',
+        'reject_reason',
     ];
 
     protected $casts = [
@@ -50,6 +52,11 @@ class StandardDecree extends Model
         return $this->hasMany(QualityStandard::class, 'standard_decree_id');
     }
 
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class, 'standard_decree_id');
+    }
+
     public function issuedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'issued_by');
@@ -63,6 +70,21 @@ class StandardDecree extends Model
     public function isDitetapkan(): bool
     {
         return $this->status === 'ditetapkan';
+    }
+
+    public function isMenungguPersetujuan(): bool
+    {
+        return $this->status === 'menunggu_persetujuan';
+    }
+
+    public function isDitolak(): bool
+    {
+        return $this->status === 'ditolak';
+    }
+
+    public function isPerubahan(): bool
+    {
+        return $this->kategori === 'perubahan';
     }
 
     /**
