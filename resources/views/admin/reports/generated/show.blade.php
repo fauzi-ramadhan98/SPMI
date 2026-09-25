@@ -20,11 +20,13 @@
     </div>
 
     <div class="card-body">
-        @if(session('success'))
-            <div class="alert alert-success"><i class="fa-solid fa-circle-check me-1"></i>{{ session('success') }}</div>
+        {{-- Error validasi (flash success/error sudah ditampilkan global oleh layout) --}}
+        @if($errors->any())
+            <div class="alert alert-danger"><ul class="mb-0 small">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul></div>
         @endif
+
         @if(session('info'))
-            <div class="alert alert-info py-2">{{ session('info') }}</div>
+            <div class="alert alert-info py-2"><i class="fa-solid fa-circle-info me-1"></i>{{ session('info') }}</div>
         @endif
         @if(session('warnings'))
             <div class="alert alert-warning">
@@ -33,9 +35,6 @@
                     @foreach(session('warnings') as $w)<li>{{ $w }}</li>@endforeach
                 </ul>
             </div>
-        @endif
-        @if($errors->any())
-            <div class="alert alert-danger"><ul class="mb-0 small">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul></div>
         @endif
 
         {{-- Info laporan --}}
