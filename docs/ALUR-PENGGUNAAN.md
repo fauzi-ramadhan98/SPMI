@@ -4,6 +4,8 @@ Dokumen ini memetakan **alur kerja lengkap** aplikasi Penjaminan Mutu Internal (
 
 > Struktur peran mengikuti **Permendiktisaintek No. 39 Tahun 2025** (lihat `RoleSeeder`).
 
+> Untuk versi dengan **studi kasus & contoh langkah konkret** per peran, lihat [`ALUR-PER-ROLE-STUDI-KASUS.md`](ALUR-PER-ROLE-STUDI-KASUS.md).
+
 ---
 
 ## 0. Peta Peran & Hak Akses
