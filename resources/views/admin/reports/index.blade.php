@@ -91,17 +91,20 @@
                     <i class="fa-solid fa-magnifying-glass-chart me-2"></i> Lihat Ringkasan
                 </button>
                 <button type="button" class="btn btn-success px-4 rounded-pill fw-bold shadow" id="generatePdfBtn">
-                    <i class="fa-solid fa-file-pdf me-2"></i> Generate Laporan AMI (PDF)
+                    <i class="fa-solid fa-file-pdf me-2"></i> Generate Laporan
                 </button>
+                <a href="{{ route('admin.reports.generated.index') }}" class="btn btn-outline-danger px-4 rounded-pill fw-bold shadow">
+                    <i class="fa-solid fa-list-check me-2"></i> Daftar Generate Laporan
+                </a>
                 <div class="w-100 text-muted small mt-1 text-end">
-                    <i class="fa-solid fa-sliders me-1"></i> Cover halaman pertama, kode &amp; edisi dokumen diatur pada menu
-                    <strong>Konfigurasi Aplikasi</strong> (khusus Administrator).
+                    <i class="fa-solid fa-circle-info me-1"></i> Generate Laporan masuk ke daftar — di sana lampiran (SK, bukti kegiatan, upload manual) disusun &amp; PDF diarsipkan.
+                    Cover, kode &amp; edisi diatur pada menu <strong>Konfigurasi Aplikasi</strong> (Administrator).
                 </div>
             </div>
         </form>
 
-        {{-- Form tersembunyi untuk download PDF --}}
-        <form action="{{ route('admin.reports.ami_pdf') }}" method="POST" id="pdfForm" target="_blank">
+        {{-- Form untuk membuat draft Generate Laporan (masuk daftar & detail lampiran) --}}
+        <form action="{{ route('admin.reports.generated.store') }}" method="POST" id="pdfForm">
             @csrf
             <input type="hidden" name="cycle_id" id="pdfCycleId">
             <input type="hidden" name="level" id="pdfLevel">

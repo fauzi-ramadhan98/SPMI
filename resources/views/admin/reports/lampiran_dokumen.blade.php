@@ -1,4 +1,41 @@
 {{-- ============ LAMPIRAN: SK, DOKUMEN SIKLUS & BUKTI KEGIATAN ============ --}}
+@if(($builderMode ?? false))
+{{-- Jalur Generate Laporan: daftar lampiran terurut; berkas PDF/gambar menyusul
+     setelah halaman ini oleh PdfAssembler sesuai urutan yang disusun pengguna. --}}
+<div class="page-break"></div>
+{!! $runheadLampiran !!}
+<div class="sec-title">Daftar Lampiran &amp; Berkas</div>
+
+<div class="block">
+    <div class="sub">Urutan Lampiran (sesuai susunan pada Generate Laporan)</div>
+    <table class="data">
+        <thead>
+            <tr>
+                <th style="width: 5%;">No</th>
+                <th>Judul Lampiran</th>
+                <th style="width: 26%;">Sumber</th>
+                <th style="width: 10%;">Jenis</th>
+                <th style="width: 22%;">Berkas</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($lampiranRows as $row)
+                <tr>
+                    <td class="center">{{ $row['no'] }}</td>
+                    <td>{{ $row['title'] }}</td>
+                    <td>{{ $row['sumber'] }}</td>
+                    <td class="center">{{ $row['jenis'] }}</td>
+                    <td>{{ $row['berkas'] }}</td>
+                </tr>
+            @empty
+                <tr><td colspan="5" class="center">Belum ada lampiran pada laporan ini.</td></tr>
+            @endforelse
+        </tbody>
+    </table>
+</div>
+
+<div class="footnote">Berkas lampiran (PDF &amp; gambar) dicetak pada halaman-halaman berikutnya, tepat sesuai urutan daftar di atas.</div>
+@else
 <div class="page-break"></div>
 {!! $runheadLampiran !!}
 <div class="sec-title">Lampiran: SK, Dokumen &amp; Bukti Kegiatan</div>
@@ -119,3 +156,4 @@
 @endforeach
 
 <div class="footnote">Berkas PDF/Word tidak dapat digabungkan ke dalam dokumen ini; nama file tercatat pada tabel di atas dan berkas asli tetap tersimpan pada aplikasi.</div>
+@endif

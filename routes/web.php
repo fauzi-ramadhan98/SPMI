@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\AuditFindingController;
 use App\Http\Controllers\Admin\SurveyController;
 use App\Http\Controllers\Admin\SurveyAnalyticsController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\ReportBuilderController;
 use App\Http\Controllers\Admin\AcademicProgramController;
 use App\Http\Controllers\Admin\QualityStandardController;
 use App\Http\Controllers\Admin\ChecklistItemController;
@@ -241,6 +242,16 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('checklist-items', [ChecklistItemController::class, 'index'])->name('checklist-items.index');
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
         Route::post('reports/ami-pdf', [ReportController::class, 'generateAmiPdf'])->name('reports.ami_pdf');
+        // Generate Laporan AMI — daftar laporan, lampiran terurut, arsip PDF
+        Route::get('reports/generated', [ReportBuilderController::class, 'index'])->name('reports.generated.index');
+        Route::post('reports/generated', [ReportBuilderController::class, 'store'])->name('reports.generated.store');
+        Route::get('reports/generated/{report}', [ReportBuilderController::class, 'show'])->name('reports.generated.show');
+        Route::post('reports/generated/{report}/attachments', [ReportBuilderController::class, 'storeAttachment'])->name('reports.generated.attachments.store');
+        Route::post('reports/generated/{report}/attachments/{attachment}/sort', [ReportBuilderController::class, 'sort'])->name('reports.generated.attachments.sort');
+        Route::delete('reports/generated/{report}/attachments/{attachment}', [ReportBuilderController::class, 'destroyAttachment'])->name('reports.generated.attachments.destroy');
+        Route::post('reports/generated/{report}/generate', [ReportBuilderController::class, 'generate'])->name('reports.generated.generate');
+        Route::get('reports/generated/{report}/download', [ReportBuilderController::class, 'download'])->name('reports.generated.download');
+        Route::delete('reports/generated/{report}', [ReportBuilderController::class, 'destroy'])->name('reports.generated.destroy');
         // Level 3 review detail untuk SPMI (atasan audit)
         Route::get('reports/{assignment}/review', [ReportController::class, 'reviewDetail'])->name('reports.review')->middleware('role:spmi|administrator');
         Route::post('reports/{assignment}/approve', [ReportController::class, 'approveLha'])->name('reports.approve')->middleware('role:spmi|administrator');
