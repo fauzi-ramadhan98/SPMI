@@ -63,8 +63,10 @@
                     <label class="form-label fw-bold">Kategori / Jenis Dokumen <span class="text-danger">*</span></label>
                     <select name="document_category_id" class="form-select @error('document_category_id') is-invalid @enderror" required>
                         <option value="" disabled {{ old('document_category_id', $document->document_category_id) ? '' : 'selected' }}>Pilih Kategori...</option>
-                        @foreach($categories as $category)
-                            <option value="{{ $category->id }}" {{ old('document_category_id', $document->document_category_id) == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
+                        @foreach($categoryOptions as $cat)
+                            <option value="{{ $cat->id }}" {{ old('document_category_id', $document->document_category_id) == $cat->id ? 'selected' : '' }}>
+                                {{ str_repeat('— ', $cat->treeDepth) }}{{ $cat->name }}
+                            </option>
                         @endforeach
                     </select>
                     @error('document_category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror

@@ -392,7 +392,7 @@
                     <i class="fa-solid fa-house"></i> Dashboard Mutu
                 </a>
                 <a href="{{ route('admin.documents.index', ['module' => 'dokumen_mutu']) }}" class="list-group-item list-group-item-action {{ request()->is('admin/documents*') && request('module') == 'dokumen_mutu' ? 'active' : '' }}">
-                    <i class="fa-solid fa-file-pdf"></i> Dokumen Mutu (Kebijakan & Manual)
+                    <i class="fa-solid fa-file-pdf"></i> Dokumen SPMI
                 </a>
 
                 {{-- P1 — Penetapan --}}
@@ -628,6 +628,9 @@
                 </a>
                 <a href="{{ route('admin.units.index') }}" class="list-group-item list-group-item-action {{ request()->is('admin/units*') ? 'active' : '' }}">
                     <i class="fa-solid fa-building"></i> Unit Kerja
+                </a>
+                <a href="{{ route('admin.document-categories.index') }}" class="list-group-item list-group-item-action {{ request()->is('admin/document-categories*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-tags"></i> Kategori Dokumen
                 </a>
                 <a href="{{ route('admin.academic_years.index') }}" class="list-group-item list-group-item-action {{ request()->is('admin/academic-years*') ? 'active' : '' }}">
                     <i class="fa-solid fa-calendar-days"></i> Tahun Akademik

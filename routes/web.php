@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\DocumentController;
+use App\Http\Controllers\Admin\DocumentCategoryController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\AuditCycleController;
 use App\Http\Controllers\Admin\AuditAssignmentController;
@@ -107,6 +108,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::middleware(['role:administrator'])->group(function () {
         Route::resource('users', UserController::class);
         Route::resource('units', UnitController::class);
+        Route::resource('document-categories', DocumentCategoryController::class)->except(['show']);
         Route::resource('pages', PageController::class);
         Route::resource('academic-years', AcademicYearController::class)->names([
             'index'   => 'academic_years.index',

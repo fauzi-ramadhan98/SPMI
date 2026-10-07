@@ -237,18 +237,8 @@
                         </ul>
                     </li>
 
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownDokumen" role="button"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                            Dokumen & Laporan
-                        </a>
-                        <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="navbarDropdownDokumen">
-                            <li><a class="dropdown-item" href="{{ route('page.generic', ['slug' => 'monev-pembelajaran']) }}">Laporan Monev Pembelajaran</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ route('public.documents.index') }}">Semua Dokumen Mutu</a></li>
-                            <li><a class="dropdown-item" href="{{ route('page.generic', ['slug' => 'dokumen-spmi-2021']) }}">Dokumen SPMI 2021</a></li>
-                            <li><a class="dropdown-item" href="{{ route('page.generic', ['slug' => 'dokumen-spmi-2025']) }}">Dokumen SPMI 2025</a></li>
-                        </ul>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('public.documents.index') }}">Dokumen SPMI</a>
                     </li>
 
                     <li class="nav-item dropdown">

@@ -9,6 +9,8 @@ use App\Models\DocumentCategory;
 use App\Models\AcademicProgram;
 use App\Models\Unit;
 use App\Models\AuditCycle;
+use App\Models\Setting;
+use App\Services\DocumentCodeGenerator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
@@ -49,6 +51,8 @@ class DocumentController extends Controller
         $documents = $query->with(['category', 'cycle', 'uploader'])->latest()->paginate(10);
 
         $categories = DocumentCategory::where('module', $module)->where('is_active', true)->orderBy('name')->get();
+        // Flat tree ber-indentasi untuk filter kategori (mendukung kedalaman tak terbatas)
+        $categoryOptions = DocumentCategory::flatTreeForModule($module, [], true);
         $cycles = AuditCycle::orderBy('created_at', 'desc')->get();
         $terbitYears = Document::where('module', 'dokumen_mutu')
             ->whereNotNull('academic_year')
@@ -58,7 +62,7 @@ class DocumentController extends Controller
             ->orderByDesc('academic_year')
             ->pluck('academic_year');
 
-        return view('admin.documents.index', compact('documents', 'module', 'categories', 'cycles', 'terbitYears'));
+        return view('admin.documents.index', compact('documents', 'module', 'categories', 'categoryOptions', 'cycles', 'terbitYears'));
     }
 
     public function create(Request $request)
@@ -78,31 +82,53 @@ class DocumentController extends Controller
             $units = $units->where('id', $user->unit_id);
         }
 
-        return view('admin.documents.create', compact('module', 'programs', 'units', 'categories', 'cycles'));
+        // Untuk dokumen SPMI (dokumen_mutu): bangun dropdown flat ber-indentasi yang mendukung
+        // kedalaman hierarki tak terbatas (induk, sub, sub-sub, dst).
+        $categoryOptions = collect();
+        if ($module === 'dokumen_mutu') {
+            $categoryOptions = DocumentCategory::flatTreeForModule($module, [], true);
+        }
+
+        return view('admin.documents.create', compact('module', 'programs', 'units', 'categories', 'cycles', 'categoryOptions'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'code' => 'required|string|max:255|unique:documents,code',
+        // Check if auto-generate is enabled and module is dokumen_mutu
+        $autoGenerate = setting('document_auto_generate') === '1';
+        $isDokumenMutu = $request->module === 'dokumen_mutu';
+
+        $rules = [
             'title' => 'required|string|max:255',
             'module' => 'required|in:dokumen_mutu,surat_tugas,rtm',
             'document_category_id' => 'required|exists:document_categories,id',
-            'file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png|max:10240', // Max 10MB
+            'file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png|max:10240',
             'is_public' => 'boolean',
             'version' => 'nullable|integer',
-            // Status otomatis 'draft', tidak perlu input user
-        ]);
+        ];
+
+        // Only require 'code' if auto-generate is OFF or module is NOT dokumen_mutu
+        if (!$autoGenerate || !$isDokumenMutu) {
+            $rules['code'] = 'required|string|max:255|unique:documents,code';
+        }
+
+        $request->validate($rules);
 
         $file = $request->file('file');
-
-        // Simpan di private disk
         $path = $file->store('documents', 'local');
 
+        $code = $request->code;
+
+        // Implement Auto-Code Generation menggunakan template yang bisa dikonfigurasi dari Settings
+        if ($autoGenerate && $isDokumenMutu) {
+            $category = DocumentCategory::findOrFail($request->document_category_id);
+            $code = DocumentCodeGenerator::generate($category);
+        }
+
         $document = Document::create([
-            'code' => $request->code,
+            'code' => $code,
             'version' => $request->version ?? 0,
-            'status' => 'draft', // Selalu draft saat pertama dibuat
+            'status' => 'draft',
             'title' => $request->title,
             'document_type' => $this->resolveDocumentType($request->document_category_id),
             'module' => $request->module,
@@ -121,10 +147,8 @@ class DocumentController extends Controller
             'doc_date' => $request->doc_date,
         ]);
 
-        // Dokumen baru selalu draft, tidak perlu de-aktifkan revisi lain
-
         return redirect()->route('admin.documents.index', ['module' => $request->module])
-            ->with('success', 'Dokumen berhasil diunggah.');
+            ->with('success', 'Dokumen berhasil diunggah dengan kode: ' . $code);
     }
 
     public function edit(Document $document)
@@ -136,6 +160,8 @@ class DocumentController extends Controller
         $programs = AcademicProgram::where('is_active', true)->get();
         $units = Unit::where('is_active', true)->get();
         $categories = DocumentCategory::where('module', $module)->where('is_active', true)->orderBy('name')->get();
+        // Flat tree ber-indentasi untuk dropdown kategori (mendukung kedalaman tak terbatas)
+        $categoryOptions = DocumentCategory::flatTreeForModule($module, [], true);
         $cycles = AuditCycle::orderBy('created_at', 'desc')->get();
 
         if ($user->hasRole('prodi')) {
@@ -151,26 +177,41 @@ class DocumentController extends Controller
             ->take(20)
             ->get();
 
-        return view('admin.documents.edit', compact('document', 'module', 'programs', 'units', 'categories', 'cycles', 'activityLogs'));
+        return view('admin.documents.edit', compact('document', 'module', 'programs', 'units', 'categories', 'categoryOptions', 'cycles', 'activityLogs'));
     }
 
     public function update(Request $request, Document $document)
     {
         $this->authorizeDocumentAccess($document, allowOwner: true);
 
-        $request->validate([
+        // Check if auto-generate is enabled and module is dokumen_mutu
+        $autoGenerate = setting('document_auto_generate') === '1';
+        $isDokumenMutu = $document->module === 'dokumen_mutu';
+
+        $rules = [
             'title' => 'required|string|max:255',
-            'code' => 'required|string|max:255|unique:documents,code,' . $document->id,
             'document_category_id' => 'required|exists:document_categories,id',
             'is_public' => 'boolean',
             'version' => 'nullable|integer',
-            // status tidak dapat diubah pada edit, jadi tidak divalidasi di sini
-        ]);
+        ];
+
+        // Only require 'code' if auto-generate is OFF or module is NOT dokumen_mutu
+        if (!$autoGenerate || !$isDokumenMutu) {
+            $rules['code'] = 'required|string|max:255|unique:documents,code,' . $document->id;
+        }
+
+        $request->validate($rules);
 
         $data = $request->except(['file']);
         $data['version'] = $request->version;
         $data['is_public'] = $request->has('is_public');
         $data['document_type'] = $this->resolveDocumentType($request->document_category_id);
+
+        // Handle Code Regeneration if category changed and auto-generate is ON
+        if ($autoGenerate && $isDokumenMutu && $request->document_category_id != $document->document_category_id) {
+            $category = DocumentCategory::findOrFail($request->document_category_id);
+            $data['code'] = DocumentCodeGenerator::generate($category);
+        }
 
         // Jika dokumen sedang aktif dan di‑edit, kembalikan ke draft agar perlu persetujuan ulang.
         if ($document->status === 'aktif') {

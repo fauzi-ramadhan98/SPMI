@@ -22,6 +22,10 @@ class SettingSeeder extends Seeder
             'report_edisi'           => ['2', 'laporan', 'Edisi Dokumen Laporan AMI'],
             'report_cover_enabled'   => ['1', 'laporan', 'Tampilkan Cover Laporan'],
             'report_cover_image'     => ['', 'laporan', 'Cover Kustom Laporan'],
+            // Konfigurasi prefix & format otomatis kode dokumen SPMI
+            'document_code_prefix'   => ['STMIK-MI/SPMI', 'dokumen', 'Prefix Kode Dokumen SPMI (misal: STMIK-MI/SPMI)'],
+            'document_auto_generate' => ['1', 'dokumen', 'Generate Kode Dokumen Otomatis'],
+            'document_code_format'   => ['{prefix}/{parent_code}.{child_code}.{seq}', 'dokumen', 'Format/Template Kode Dokumen'],
         ];
 
         foreach ($defaults as $key => [$value, $group, $label]) {

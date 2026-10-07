@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Services\DocumentCodeGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -32,6 +33,10 @@ class SettingController extends Controller
             'report_edisi' => 'nullable|string|max:30',
             'report_cover_enabled' => 'nullable|in:0,1',
             'report_cover_image' => 'nullable|image|mimes:png,jpg,jpeg|max:5120',
+            // Pengaturan kode dokumen SPMI
+            'document_code_prefix' => 'nullable|string|max:120',
+            'document_code_format' => 'nullable|string|max:255',
+            'document_auto_generate' => 'nullable|in:0,1',
         ]);
 
         $userId = Auth::id();
@@ -98,6 +103,34 @@ class SettingController extends Controller
                 Storage::disk('public')->delete($old);
             }
             Setting::set('report_cover_image', $path, 'laporan', 'Cover Kustom Laporan', $userId);
+        }
+
+        // ===== Pengaturan kode dokumen SPMI (prefix, format template, auto-generate) =====
+        if ($request->has('document_code_prefix')) {
+            Setting::set(
+                'document_code_prefix',
+                trim((string) $request->input('document_code_prefix')) ?: 'STMIK-MI/SPMI',
+                'dokumen',
+                'Prefix Kode Dokumen SPMI (misal: STMIK-MI/SPMI)',
+                $userId
+            );
+        }
+        if ($request->has('document_code_format')) {
+            $format = trim((string) $request->input('document_code_format')) ?: '{prefix}/{parent_code}.{child_code}.{seq}';
+            $validation = DocumentCodeGenerator::validateTemplate($format);
+            if (!$validation['valid']) {
+                return back()->withErrors(['document_code_format' => $validation['message']])->withInput();
+            }
+            Setting::set('document_code_format', $format, 'dokumen', 'Format/Template Kode Dokumen', $userId);
+        }
+        if ($request->has('document_auto_generate')) {
+            Setting::set(
+                'document_auto_generate',
+                $request->boolean('document_auto_generate') ? '1' : '0',
+                'dokumen',
+                'Generate Kode Dokumen Otomatis',
+                $userId
+            );
         }
 
         return redirect()->route('admin.settings.index')

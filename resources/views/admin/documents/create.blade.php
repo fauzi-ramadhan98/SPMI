@@ -19,12 +19,29 @@
             @csrf
             <input type="hidden" name="module" value="{{ request('module', 'dokumen_mutu') }}">
             
+            @php
+                $autoGenerate = setting('document_auto_generate') === '1';
+                $isDokumenMutuModule = request('module', 'dokumen_mutu') === 'dokumen_mutu';
+                $useAutoCode = $autoGenerate && $isDokumenMutuModule;
+            @endphp
+
             <div class="row g-4 mb-4">
                 <div class="col-md-6">
-                    <label class="form-label fw-bold">Kode Dokumen <span class="text-danger">*</span></label>
-                    <input type="text" name="code" class="form-control @error('code') is-invalid @enderror" 
-                           placeholder="Contoh: DOK-001" value="{{ old('code') }}" required>
-                    @error('code')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    @if($useAutoCode)
+                        <label class="form-label fw-bold">Kode Dokumen</label>
+                        <div class="form-control-plaintext">
+                            <span class="badge bg-info text-dark">Otomatis</span>
+                            <div class="form-text">Kode dokumen akan dibuat otomatis mengikuti template
+                                <code>{{ setting('document_code_format', '{prefix}/{parent_code}.{child_code}.{seq}') }}</code>
+                                setelah kategori & sub kategori dipilih. Format dapat diubah pada
+                                <a href="{{ route('admin.settings.index') }}">Konfigurasi Aplikasi</a>.</div>
+                        </div>
+                    @else
+                        <label class="form-label fw-bold">Kode Dokumen <span class="text-danger">*</span></label>
+                        <input type="text" name="code" class="form-control @error('code') is-invalid @enderror"
+                               placeholder="Contoh: DOK-001" value="{{ old('code') }}" required>
+                        @error('code')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    @endif
                 </div>
                 
                 <div class="col-md-6">
@@ -49,16 +66,32 @@
                     </div>
                 </div>
 
-                <div class="col-md-6">
-                    <label class="form-label fw-bold">Kategori / Jenis Dokumen <span class="text-danger">*</span></label>
-                    <select name="document_category_id" class="form-select @error('document_category_id') is-invalid @enderror" required>
-                        <option value="" disabled {{ old('document_category_id') ? '' : 'selected' }}>Pilih Kategori...</option>
-                        @foreach($categories as $category)
-                            <option value="{{ $category->id }}" {{ old('document_category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('document_category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
+                @if($isDokumenMutuModule)
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Kategori Dokumen <span class="text-danger">*</span></label>
+                        <select name="document_category_id" class="form-select @error('document_category_id') is-invalid @enderror" required>
+                            <option value="" disabled {{ old('document_category_id') ? '' : 'selected' }}>-- Pilih Kategori --</option>
+                            @foreach($categoryOptions as $cat)
+                                <option value="{{ $cat->id }}" {{ old('document_category_id') == $cat->id ? 'selected' : '' }}>
+                                    {{ str_repeat('— ', $cat->treeDepth) }}{{ $cat->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <div class="form-text">Kategori dengan sub-kategori ditandai garis bawah ("—"), semakin dalam sub-kategori, semakin banyak garisnya.</div>
+                        @error('document_category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                @else
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Kategori / Jenis Dokumen <span class="text-danger">*</span></label>
+                        <select name="document_category_id" class="form-select @error('document_category_id') is-invalid @enderror" required>
+                            <option value="" disabled {{ old('document_category_id') ? '' : 'selected' }}>Pilih Kategori...</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}" {{ old('document_category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('document_category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                @endif
 
                 <div class="col-md-6">
                     @if(request('module') === 'dokumen_mutu')

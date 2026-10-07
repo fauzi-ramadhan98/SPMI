@@ -117,6 +117,45 @@
                         <div class="form-text">Jika diisi, gambar ini menjadi halaman cover pertama (disarankan rasio portrait/A4, maks 5MB). Kosongkan untuk mempertahankan cover saat ini.</div>
                     </div>
 
+                    <hr class="my-4">
+                    <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-file-signature me-2"></i>Format Kode Dokumen SPMI</h6>
+
+                    <div class="mb-3 form-check">
+                        <input type="hidden" name="document_auto_generate" value="0">
+                        <input type="checkbox" class="form-check-input" id="documentAutoGenerate"
+                               name="document_auto_generate" value="1"
+                               @checked(old('document_auto_generate', setting('document_auto_generate', '1')) === '1')>
+                        <label class="form-check-label fw-bold" for="documentAutoGenerate">Generate Kode Dokumen Otomatis</label>
+                        <div class="form-text">Jika aktif, kode dokumen (Dokumen Mutu/SPMI) dibuat otomatis mengikuti template di bawah ketika petugas mengunggah dokumen baru.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Prefix Kode Dokumen</label>
+                        <input type="text" name="document_code_prefix" class="form-control @error('document_code_prefix') is-invalid @enderror"
+                               placeholder="STMIK-MI/SPMI"
+                               value="{{ old('document_code_prefix', setting('document_code_prefix', 'STMIK-MI/SPMI')) }}">
+                        @error('document_code_prefix')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="form-text">Bagian tetap di awal kode, misal <code>STMIK-MI/SPMI</code> atau <code>STMIK-MI.SPMI</code>.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Template Format Kode</label>
+                        <input type="text" name="document_code_format" class="form-control @error('document_code_format') is-invalid @enderror"
+                               placeholder="{prefix}/{parent_code}.{child_code}.{seq}"
+                               value="{{ old('document_code_format', setting('document_code_format', '{prefix}/{parent_code}.{child_code}.{seq}')) }}">
+                        @error('document_code_format')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="form-text">
+                            Placeholder yang didukung: <code>{prefix}</code>, <code>{parent_code}</code>, <code>{child_code}</code>,
+                            <code>{seq}</code> (nomor urut, wajib ada), <code>{MM}</code> (bulan), <code>{YYYY}</code> (tahun 4 digit), <code>{YY}</code> (tahun 2 digit).<br>
+                            Contoh lain: <code>{prefix}.{parent_code}.{child_code}.{seq}</code> atau <code>{prefix}/{parent_code}.{child_code}.{seq}/{MM}.{YYYY}</code>.
+                        </div>
+                    </div>
+
+                    <div class="alert alert-light border small mb-4">
+                        <i class="fa-solid fa-circle-info me-1"></i>
+                        Perubahan format hanya berlaku untuk kode dokumen baru yang dibuat setelah ini. Dokumen yang sudah ada tidak berubah kodenya.
+                    </div>
+
                     <button type="submit" class="btn btn-primary btn-custom">
                         <i class="fa-solid fa-floppy-disk me-2"></i>Simpan Konfigurasi
                     </button>

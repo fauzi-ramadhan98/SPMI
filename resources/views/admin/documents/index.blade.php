@@ -3,15 +3,15 @@
 @section('title', 'Manajemen Dokumen SPMI')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+{{-- <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <ul class="nav nav-pills">
-        @foreach(['dokumen_mutu' => 'Dokumen Mutu', 'surat_tugas' => 'Surat Tugas', 'rtm' => 'RTM'] as $key => $label)
+        @foreach(['dokumen_mutu' => 'Dokumen SPMI', 'surat_tugas' => 'Surat Tugas', 'rtm' => 'RTM'] as $key => $label)
             <li class="nav-item">
                 <a href="{{ route('admin.documents.index', ['module' => $key]) }}" class="nav-link {{ $module === $key ? 'active fw-semibold' : '' }}">{{ $label }}</a>
             </li>
         @endforeach
     </ul>
-</div>
+</div> --}}
 
 <form method="GET" action="{{ route('admin.documents.index') }}" class="row g-2 mb-3 align-items-end">
     <input type="hidden" name="module" value="{{ $module }}">
@@ -19,8 +19,10 @@
         <label class="form-label small mb-1">Kategori</label>
         <select name="category_id" class="form-select form-select-sm">
             <option value="">Semua Kategori</option>
-            @foreach ($categories as $category)
-                <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
+            @foreach ($categoryOptions as $cat)
+                <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
+                    {{ str_repeat('— ', $cat->treeDepth) }}{{ $cat->name }}
+                </option>
             @endforeach
         </select>
     </div>
@@ -51,7 +53,7 @@
 
 <div class="card card-custom shadow-sm">
     <div class="card-header-custom d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 fw-bold">Daftar {{ $module === 'rtm' ? 'Dokumen RTM' : ucwords(str_replace('_', ' ', $module)) }}</h5>
+        <h5 class="mb-0 fw-bold">Daftar {{ $module === 'dokumen_mutu' ? 'Dokumen SPMI' : ucwords(str_replace('_', ' ', $module)) }}</h5>
         <a href="{{ route('admin.documents.create', ['module' => $module]) }}" class="btn btn-primary fw-semibold rounded-pill px-4">
             <i class="fa-solid fa-plus me-1"></i> Unggah Dokumen
         </a>
