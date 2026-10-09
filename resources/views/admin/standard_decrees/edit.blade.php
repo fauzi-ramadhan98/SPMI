@@ -74,34 +74,34 @@
                     <input type="file" name="file_sk_final" class="form-control" accept="application/pdf">
                     <div class="form-text">Format PDF, maksimal 10 MB. Kosongkan jika tidak mengganti.</div>
                 </div>
+                <!--<div class="col-12">-->
+                <!--    <label class="form-label d-block">Standar Mutu{{ $decree->isPerubahan() ? ' (Wajib — hanya standar Revisi Draft)' : ' (opsional)' }}</label>-->
+                <!--    <div class="border rounded p-3" style="max-height:300px; overflow-y:auto;">-->
+                <!--        @forelse($standards as $std)-->
+                <!--        <div class="form-check d-flex justify-content-between align-items-center mb-2">-->
+                <!--            <div class="d-flex align-items-center">-->
+                <!--                <input class="form-check-input me-2" type="checkbox" name="standard_ids[]" value="{{ $std->id }}"-->
+                <!--                       id="std-{{ $std->id }}" @checked(in_array($std->id, $selected))>-->
+                <!--                <label class="form-check-label" for="std-{{ $std->id }}" style="cursor: pointer;">-->
+                <!--                    <strong>{{ $std->kode_standar }}</strong> — {{ $std->pernyataan_standar }}-->
+                <!--                </label>-->
+                <!--            </div>-->
+                <!--            @if(in_array($std->id, $selected))-->
+                <!--                <span class="badge bg-success">Terpilih</span>-->
+                <!--            @elseif($std->revisi_status === 'draft_revisi')-->
+                <!--                <span class="badge bg-warning-subtle text-warning">Revisi Draft</span>-->
+                <!--            @else-->
+                <!--                <span class="badge bg-secondary">—</span>-->
+                <!--            @endif-->
+                <!--        </div>-->
+                <!--        @empty-->
+                <!--        <p class="text-muted mb-0">Tidak ada standar tersedia.</p>-->
+                <!--        @endforelse-->
+                <!--    </div>-->
+                <!--    <div class="form-text">Standar yang dicentang akan terikat pada SK ini (menggantikan pilihan sebelumnya).</div>-->
+                <!--</div>-->
                 <div class="col-12">
-                    <label class="form-label d-block">Standar Mutu{{ $decree->isPerubahan() ? ' (Wajib — hanya standar Revisi Draft)' : ' (opsional)' }}</label>
-                    <div class="border rounded p-3" style="max-height:300px; overflow-y:auto;">
-                        @forelse($standards as $std)
-                        <div class="form-check d-flex justify-content-between align-items-center mb-2">
-                            <div class="d-flex align-items-center">
-                                <input class="form-check-input me-2" type="checkbox" name="standard_ids[]" value="{{ $std->id }}"
-                                       id="std-{{ $std->id }}" @checked(in_array($std->id, $selected))>
-                                <label class="form-check-label" for="std-{{ $std->id }}" style="cursor: pointer;">
-                                    <strong>{{ $std->kode_standar }}</strong> — {{ $std->pernyataan_standar }}
-                                </label>
-                            </div>
-                            @if(in_array($std->id, $selected))
-                                <span class="badge bg-success">Terpilih</span>
-                            @elseif($std->revisi_status === 'draft_revisi')
-                                <span class="badge bg-warning-subtle text-warning">Revisi Draft</span>
-                            @else
-                                <span class="badge bg-secondary">—</span>
-                            @endif
-                        </div>
-                        @empty
-                        <p class="text-muted mb-0">Tidak ada standar tersedia.</p>
-                        @endforelse
-                    </div>
-                    <div class="form-text">Standar yang dicentang akan terikat pada SK ini (menggantikan pilihan sebelumnya).</div>
-                </div>
-                <div class="col-12">
-                    <label class="form-label d-block">Dokumen Mutu</label>
+                    <label class="form-label d-block">Dokumen SPMI</label>
                     <div class="border rounded p-3" style="max-height:300px; overflow-y:auto;">
                         @forelse($draftDocuments as $doc)
                         <div class="form-check d-flex justify-content-between align-items-center mb-2">

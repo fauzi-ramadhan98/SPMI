@@ -57,37 +57,37 @@
                     <input type="file" name="file_sk_final" class="form-control" accept="application/pdf">
                     <div class="form-text">Format PDF, maksimal 10 MB. Bisa juga diunggah nanti melalui tombol "Upload SK" pada daftar SK.</div>
                 </div>
+                <!--<div class="col-12">-->
+                <!--    <label class="form-label d-block">Standar Mutu{{ ($kategori ?? 'penetapan') === 'perubahan' ? ' Revisi (Wajib)' : ' (opsional)' }}</label>-->
+                <!--    @if(($kategori ?? 'penetapan') === 'perubahan')-->
+                <!--    <div class="alert alert-warning py-2 small mb-2">-->
+                <!--        <i class="fa-solid fa-triangle-exclamation me-1"></i>SK Perubahan mengikat standar yang sedang <strong>Revisi Draft</strong>. Pilih minimal satu standar.-->
+                <!--    </div>-->
+                <!--    @endif-->
+                <!--    <div class="border rounded p-3" style="max-height:300px; overflow-y:auto;">-->
+                <!--        @forelse($standards ?? [] as $std)-->
+                <!--            <div class="form-check d-flex justify-content-between align-items-center mb-2">-->
+                <!--                <div class="d-flex align-items-center">-->
+                <!--                    <input class="form-check-input me-2" type="checkbox" name="standard_ids[]" value="{{ $std->id }}"-->
+                <!--                           id="std-{{ $std->id }}" @checked(is_array(old('standard_ids')) && in_array($std->id, old('standard_ids')))>-->
+                <!--                    <label class="form-check-label" for="std-{{ $std->id }}" style="cursor: pointer;">-->
+                <!--                        <strong>{{ $std->kode_standar }}</strong> — {{ $std->pernyataan_standar }}-->
+                <!--                    </label>-->
+                <!--                </div>-->
+                <!--                @if($std->revisi_status === 'draft_revisi')-->
+                <!--                    <span class="badge bg-warning-subtle text-warning">v{{ $std->version }} Revisi Draft</span>-->
+                <!--                @else-->
+                <!--                    <span class="badge bg-success-subtle text-success">v{{ $std->version }} Aktif</span>-->
+                <!--                @endif-->
+                <!--            </div>-->
+                <!--        @empty-->
+                <!--        <p class="text-muted mb-0">{{ ($kategori ?? 'penetapan') === 'perubahan' ? 'Tidak ada standar berstatus Revisi Draft. Revisi standar dulu lewat menu P5.1.' : 'Tidak ada standar tersedia.' }}</p>-->
+                <!--        @endforelse-->
+                <!--    </div>-->
+                <!--    <div class="form-text">Standar yang dipilih akan terikat pada SK ini. Setelah SK ditetapkan, status revisi standar kembali Aktif.</div>-->
+                <!--</div>-->
                 <div class="col-12">
-                    <label class="form-label d-block">Standar Mutu{{ ($kategori ?? 'penetapan') === 'perubahan' ? ' Revisi (Wajib)' : ' (opsional)' }}</label>
-                    @if(($kategori ?? 'penetapan') === 'perubahan')
-                    <div class="alert alert-warning py-2 small mb-2">
-                        <i class="fa-solid fa-triangle-exclamation me-1"></i>SK Perubahan mengikat standar yang sedang <strong>Revisi Draft</strong>. Pilih minimal satu standar.
-                    </div>
-                    @endif
-                    <div class="border rounded p-3" style="max-height:300px; overflow-y:auto;">
-                        @forelse($standards ?? [] as $std)
-                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
-                                <div class="d-flex align-items-center">
-                                    <input class="form-check-input me-2" type="checkbox" name="standard_ids[]" value="{{ $std->id }}"
-                                           id="std-{{ $std->id }}" @checked(is_array(old('standard_ids')) && in_array($std->id, old('standard_ids')))>
-                                    <label class="form-check-label" for="std-{{ $std->id }}" style="cursor: pointer;">
-                                        <strong>{{ $std->kode_standar }}</strong> — {{ $std->pernyataan_standar }}
-                                    </label>
-                                </div>
-                                @if($std->revisi_status === 'draft_revisi')
-                                    <span class="badge bg-warning-subtle text-warning">v{{ $std->version }} Revisi Draft</span>
-                                @else
-                                    <span class="badge bg-success-subtle text-success">v{{ $std->version }} Aktif</span>
-                                @endif
-                            </div>
-                        @empty
-                        <p class="text-muted mb-0">{{ ($kategori ?? 'penetapan') === 'perubahan' ? 'Tidak ada standar berstatus Revisi Draft. Revisi standar dulu lewat menu P5.1.' : 'Tidak ada standar tersedia.' }}</p>
-                        @endforelse
-                    </div>
-                    <div class="form-text">Standar yang dipilih akan terikat pada SK ini. Setelah SK ditetapkan, status revisi standar kembali Aktif.</div>
-                </div>
-                <div class="col-12">
-                    <label class="form-label d-block">Dokumen Mutu (Status Draft)</label>
+                    <label class="form-label d-block">Dokumen SPMI (Status Draft)</label>
                     <div class="border rounded p-3" style="max-height:300px; overflow-y:auto;">
                         @forelse($draftDocuments as $doc)
                             <div class="form-check d-flex justify-content-between align-items-center mb-2">

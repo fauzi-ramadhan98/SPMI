@@ -244,10 +244,10 @@
                             <textarea name="description" class="form-control" rows="2"
                                 placeholder="Keterangan tambahan tentang standar ini (opsional)"></textarea>
                         </div>
-                        <div class="col-12">
-                            <label class="form-label fw-bold small">Upload Dokumen Standar <span class="text-muted fw-normal">(PDF, Word, Excel — maks 10MB)</span></label>
-                            <input type="file" name="file" class="form-control" accept=".pdf,.doc,.docx,.xls,.xlsx">
-                        </div>
+                        <!--<div class="col-12">-->
+                        <!--    <label class="form-label fw-bold small">Upload Dokumen Standar <span class="text-muted fw-normal">(PDF, Word, Excel — maks 10MB)</span></label>-->
+                        <!--    <input type="file" name="file" class="form-control" accept=".pdf,.doc,.docx,.xls,.xlsx">-->
+                        <!--</div>-->
                         <div class="col-12">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="is_active_modal" name="is_active" value="1" checked>

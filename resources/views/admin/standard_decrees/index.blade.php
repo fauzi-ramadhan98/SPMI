@@ -17,9 +17,9 @@
         </h6>
         <div class="d-flex align-items-center gap-2">
             @hasrole('spmi')
-            <a href="{{ $isPerubahan ? route('admin.revisi-standar.index') : route('admin.standard-decrees.create') }}" class="btn btn-sm btn-outline-secondary">
-                <i class="fa-solid {{ $isPerubahan ? 'fa-clock-rotate-left' : 'fa-list-check' }} me-1"></i>{{ $isPerubahan ? 'Lihat Standar Revisi' : 'Daftar Standar' }}
-            </a>
+            <!--<a href="{{ $isPerubahan ? route('admin.revisi-standar.index') : route('admin.standard-decrees.create') }}" class="btn btn-sm btn-outline-secondary">-->
+            <!--    <i class="fa-solid {{ $isPerubahan ? 'fa-clock-rotate-left' : 'fa-list-check' }} me-1"></i>{{ $isPerubahan ? 'Lihat Standar Revisi' : 'Daftar Standar' }}-->
+            <!--</a>-->
             <a href="{{ route('admin.standard-decrees.create', $isPerubahan ? ['kategori' => 'perubahan'] : []) }}" class="btn btn-sm btn-primary btn-custom">
                 <i class="fa-solid fa-plus me-1"></i>{{ $isPerubahan ? 'Buat SK Perubahan' : 'Buat SK' }}
             </a>

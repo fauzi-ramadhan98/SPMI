@@ -134,39 +134,39 @@
                 </div>
 
                 {{-- File Upload Section --}}
-                <div class="col-12">
-                    <label class="form-label fw-bold">Upload Dokumen Standar <span class="text-muted fw-normal small">(PDF, Word, Excel — maks 10MB)</span></label>
-                    @if($qualityStandard->file_path)
-                    <div class="alert alert-info border-0 rounded-3 py-2 px-3 mb-2 d-flex align-items-center gap-3" style="background-color:#eff6ff;">
-                        <div>
-                            @if($qualityStandard->file_type == 'excel')
-                                <i class="fa-regular fa-file-excel text-success fa-lg"></i>
-                            @elseif($qualityStandard->file_type == 'word')
-                                <i class="fa-regular fa-file-word text-primary fa-lg"></i>
-                            @else
-                                <i class="fa-regular fa-file-pdf text-danger fa-lg"></i>
-                            @endif
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="fw-semibold small">{{ $qualityStandard->file_name }}</div>
-                            <div class="text-muted" style="font-size:11px;">
-                                {{ $qualityStandard->file_type ? strtoupper($qualityStandard->file_type) : '' }}
-                                @if($qualityStandard->file_size)
-                                    &nbsp;·&nbsp; {{ round($qualityStandard->file_size / 1024, 1) }} KB
-                                @endif
-                            </div>
-                        </div>
-                        <a href="{{ route('admin.quality-standards.download-file', $qualityStandard->id) }}"
-                           class="btn btn-sm btn-outline-primary rounded-pill px-3" style="font-size:12px;">
-                            <i class="fa-solid fa-download me-1"></i> Download
-                        </a>
-                    </div>
-                    <p class="text-muted small mb-1"><i class="fa-solid fa-info-circle me-1"></i>Upload file baru untuk mengganti dokumen yang ada.</p>
-                    @endif
-                    <input type="file" name="file" class="form-control @error('file') is-invalid @enderror"
-                        accept=".pdf,.doc,.docx,.xls,.xlsx">
-                    @error('file')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
+                <!--<div class="col-12">-->
+                <!--    <label class="form-label fw-bold">Upload Dokumen Standar <span class="text-muted fw-normal small">(PDF, Word, Excel — maks 10MB)</span></label>-->
+                <!--    @if($qualityStandard->file_path)-->
+                <!--    <div class="alert alert-info border-0 rounded-3 py-2 px-3 mb-2 d-flex align-items-center gap-3" style="background-color:#eff6ff;">-->
+                <!--        <div>-->
+                <!--            @if($qualityStandard->file_type == 'excel')-->
+                <!--                <i class="fa-regular fa-file-excel text-success fa-lg"></i>-->
+                <!--            @elseif($qualityStandard->file_type == 'word')-->
+                <!--                <i class="fa-regular fa-file-word text-primary fa-lg"></i>-->
+                <!--            @else-->
+                <!--                <i class="fa-regular fa-file-pdf text-danger fa-lg"></i>-->
+                <!--            @endif-->
+                <!--        </div>-->
+                <!--        <div class="flex-grow-1">-->
+                <!--            <div class="fw-semibold small">{{ $qualityStandard->file_name }}</div>-->
+                <!--            <div class="text-muted" style="font-size:11px;">-->
+                <!--                {{ $qualityStandard->file_type ? strtoupper($qualityStandard->file_type) : '' }}-->
+                <!--                @if($qualityStandard->file_size)-->
+                <!--                    &nbsp;·&nbsp; {{ round($qualityStandard->file_size / 1024, 1) }} KB-->
+                <!--                @endif-->
+                <!--            </div>-->
+                <!--        </div>-->
+                <!--        <a href="{{ route('admin.quality-standards.download-file', $qualityStandard->id) }}"-->
+                <!--           class="btn btn-sm btn-outline-primary rounded-pill px-3" style="font-size:12px;">-->
+                <!--            <i class="fa-solid fa-download me-1"></i> Download-->
+                <!--        </a>-->
+                <!--    </div>-->
+                <!--    <p class="text-muted small mb-1"><i class="fa-solid fa-info-circle me-1"></i>Upload file baru untuk mengganti dokumen yang ada.</p>-->
+                <!--    @endif-->
+                <!--    <input type="file" name="file" class="form-control @error('file') is-invalid @enderror"-->
+                <!--        accept=".pdf,.doc,.docx,.xls,.xlsx">-->
+                <!--    @error('file')<div class="invalid-feedback">{{ $message }}</div>@enderror-->
+                <!--</div>-->
 
                 {{-- Apabilitas Standar (Target Audiens) --}}
                 <div class="col-12">
